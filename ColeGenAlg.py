@@ -30,7 +30,7 @@ def mutate(child, mutation_rate, length):
             child[i] = random.randint(1, length)
     return child
 
-def evolve_population(population, generations, mutation_rate, list_length):
+def new_generation(population, generations, mutation_rate, list_length):
     for generation in range(generations):
         population.sort(key=fitness)
         
@@ -48,7 +48,7 @@ def evolve_population(population, generations, mutation_rate, list_length):
 
 def GA_sort(list_length, population_size, generations, mutation_rate):
     population = generate_initial_population(population_size, list_length)
-    evolved_population = evolve_population(population, generations, mutation_rate, list_length)
+    evolved_population = new_generation(population, generations, mutation_rate, list_length)
     return evolved_population[0]
 
 list_length = 10
