@@ -10,7 +10,7 @@ def fitness(lst):
     total_sum = 0
 
     for index, value in enumerate(lst):
-        difference = abs(value - index)
+        difference = abs(value - (index+1))
         total_sum += difference
 
     return total_sum
