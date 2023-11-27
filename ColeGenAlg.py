@@ -58,3 +58,4 @@ mutation_rate = 0.1
 
 sorted_list = GA_sort(list_length, population_size, generations, mutation_rate)
 print("Sorted List:", sorted_list)
+print("Fitness Value:", fitness(sorted_list))
