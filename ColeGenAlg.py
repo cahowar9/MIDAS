@@ -24,13 +24,13 @@ def crossover(parent1, parent2):
     child = parent1[:crossover_point] + parent2[crossover_point:]
     return child
 
-def mutate(child, mutation_rate):
+def mutate(child, mutation_rate, length):
     for i in range(len(child)):
         if random.random() < mutation_rate:
-            child[i] = random.randint(1, 100)
+            child[i] = random.randint(1, length)
     return child
 
-def evolve_population(population, generations, mutation_rate):
+def evolve_population(population, generations, mutation_rate, list_length):
     for generation in range(generations):
         population.sort(key=fitness)
         
@@ -39,7 +39,7 @@ def evolve_population(population, generations, mutation_rate):
 
         parents = choose_parents(population, 2)
         child = crossover(parents[0], parents[1])
-        child = mutate(child, mutation_rate)
+        child = mutate(child, mutation_rate, list_length)
         population = population[:-1] 
         population.append(child) 
 
@@ -48,7 +48,7 @@ def evolve_population(population, generations, mutation_rate):
 
 def GA_sort(list_length, population_size, generations, mutation_rate):
     population = generate_initial_population(population_size, list_length)
-    evolved_population = evolve_population(population, generations, mutation_rate)
+    evolved_population = evolve_population(population, generations, mutation_rate, list_length)
     return evolved_population[0]
 
 list_length = 10
