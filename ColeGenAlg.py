@@ -52,8 +52,8 @@ def GA_sort(list_length, population_size, generations, mutation_rate):
     return evolved_population[0]
 
 list_length = 10
-population_size = 1000
-generations = 10000
+population_size = 10
+generations = 2000
 mutation_rate = 0.1
 
 sorted_list = GA_sort(list_length, population_size, generations, mutation_rate)
