@@ -1583,6 +1583,7 @@ class Genetic_Algorithm(object):
             foo.generate_initial(self.file_settings['genome']['chromosomes'])
 
         return foo
+    
 
     def main_in_parallel(self):
         """
@@ -1599,15 +1600,14 @@ class Genetic_Algorithm(object):
         track_file.write("Beginning Optimization \n")
         track_file.close()
 
-        loading_pattern_tracker = open("loading_patterns.txt", 'w')
-        loading_pattern_tracker.close()
-
         all_value_count = 0
         all_values = open('all_value_tracker.txt','w')
         all_values.close()
         for i in range(self.population.size):
             foo = self.generate_initial_solutions(f'initial_parent_{i}')
             self.population.parents.append(foo)
+
+
 
         for i in range(self.population.size):
             foo = self.generate_initial_solutions(f'initial_child_{i}')
@@ -1704,18 +1704,45 @@ class Genetic_Algorithm(object):
         track_file.write("Beginning Optimization \n")
         track_file.close()
 
-        loading_pattern_tracker = open("loading patterns.txt", 'w')
-        loading_pattern_tracker.close()
+        allpatterns = open("allpatterns.txt","w")
+        allpatterns.close()
+
+        # def printlp(name, solution):
+        #     loading_pattern_tracker.write("\n"+"\n"+name+"\n")
+        #     x = 0
+        #     lp = solution.genome
+        #     y = [1,2,3,4,5,6,6,5]
+        #     for j in y:
+        #         for i in range(j):
+        #             loading_pattern_tracker.write(str(lp[x])+" ")
+        #             x += 1
+        #         loading_pattern_tracker.write("\n") 
+
 
         for i in range(self.population.size):
             foo = self.generate_initial_solutions(f'initial_parent_{i}')
-            foo.evaluate()
+            if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
+                foo.evaluateVerification()
+            else:
+                 foo.evaluate()      
             self.population.parents.append(foo)
+
+            # -------
+            # printlp(f'initial_parent_{i}',foo)
+            # -------
+
 
         for i in range(self.population.size):
             foo = self.generate_initial_solutions(f'initial_child_{i}')
-            foo.evaluate()
+            if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
+                foo.evaluateVerification()
+            else:
+                foo.evaluate()  
             self.population.children.append(foo)
+
+            # ------
+            # printlp(f'initial_parent_{i}',foo)
+            # ------
 
       #  self.population.parents = map(evaluate_function, self.population.parents)
       #  self.population.children = map(evaluate_function, self.population.children)
@@ -1733,7 +1760,14 @@ class Genetic_Algorithm(object):
                 solution.name = "child_{}_{}".format(self.generation.current, i)
                 solution.parameters = copy.deepcopy(self.file_settings['optimization']['objectives'])
                 solution.add_additional_information(self.file_settings)
-                solution.evaluate()
+                if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
+                    solution.evaluateVerification()
+                else:
+                    solution.evaluate()
+            
+                # ------
+                # printlp(f'initial_parent_{i}',foo)
+                # ------
 
            # self.population.children = map(evaluate_function, self.population.children)
 
@@ -1903,9 +1937,6 @@ class Genetic_Algorithm(object):
         track_file.write("Beginning Optimization \n")
         track_file.close()
 
-        loading_pattern_tracker = open("loading_patterns.txt", 'w')
-        loading_pattern_tracker.close()
-
         all_value_count = 0
         all_values = open('all_value_tracker.txt','w')
         all_values.close()
@@ -1922,6 +1953,7 @@ class Genetic_Algorithm(object):
             else:
                 foo.generate_initial(self.file_settings['genome']['chromosomes'])
             self.population.parents.append(foo)
+
 
         for i in range(self.population.size):
             foo = self.solution()
@@ -2018,10 +2050,8 @@ class Genetic_Algorithm(object):
 
         track_file = open('optimization_track_file.txt', 'w')
         track_file.write("Beginning Optimization \n")
-        track_file.close()
+        track_file.close() 
 
-        loading_pattern_tracker = open("loading patterns.txt", 'w')
-        loading_pattern_tracker.close()
 
         for i in range(self.population.size):
             foo = self.solution()
@@ -2035,8 +2065,10 @@ class Genetic_Algorithm(object):
                 foo.genome = scrambler.reproduce(foo.genome)
             else:
                 foo.generate_initial(self.file_settings['genome']['chromosomes'])
+
             test_evaluate_function(foo)
             self.population.parents.append(foo)
+
 
         for i in range(self.population.size):
             foo = self.solution()
