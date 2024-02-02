@@ -1,5 +1,6 @@
 import os
 import gc
+import string
 import sys
 import copy
 import h5py
@@ -406,7 +407,62 @@ class Simulate_Loading_Pattern_Solution(Solution):
                     bad_gene_list.append(i)
 
             if not bad_gene_list:
-                no_genome_found = False                
+                no_genome_found = False    
+
+
+    def evaluateVerification(self):
+        """
+        Uses h5 files of NuScale reactor to evaluate the input file rather than running simulate3
+
+        Written by Jake Mikouchi. 1/31/2024
+        """
+        # this section creates the directory with the input file
+        File_Writer.write_input_file_NuScale(self)
+        line_ = "cd {} ; ".format(self.name)
+        line_ += "{}_sim.inp".format(self.name)
+        os.system(line_)
+
+        # this section retrieves the core from the input file
+        os.chdir("{}".format(self.name))
+        FAdata = []
+        fSimin = open("{}_sim.inp".format(self.name))
+        lines = fSimin.readlines()
+        FAsearch = "FUE.TYP"
+        FAstart = ', '
+        FAend = '/'
+        for line in lines:
+            if FAsearch in line:
+                LineData = (line.split(FAstart)[1].split(FAend)[0])
+                FAdata.append(LineData.split(" "))
+        os.chdir("..")
+
+        # formats the core in a more convenieint way for reading the hf files. 
+        # CorePattern = [int(FAdata[0][0]),
+                    #    int(FAdata[1][0]), int(FAdata[1][1]),
+                    #    int(FAdata[2][0]),int(FAdata[2][1]),int(FAdata[2][2]),
+                    #    int(FAdata[3][0]),int(FAdata[3][1])
+                    #    ]
+        CorePatternName = FAdata[0][0]+FAdata[1][0]+FAdata[1][1]+FAdata[2][0]+FAdata[2][1]+FAdata[2][2]+FAdata[3][0]+FAdata[3][1]     
+        allpatterns = open("allpatterns.txt","a")
+        allpatterns.write(CorePatternName+"\n")
+        allpatterns.close()
+        
+        f = h5py.File("../../midas/NuScaleModel/Solutions_"+FAdata[1][0]+".hdf5", 'r')
+
+        EFPD = f[CorePatternName]["Objectives"][0]
+        FDH = f[CorePatternName]["Objectives"][1]
+        FQ = f[CorePatternName]["Objectives"][2]
+        Boron = f[CorePatternName]["Objectives"][3]
+
+        if "cycle_length" in self.parameters:
+            self.parameters['cycle_length']['value'] = EFPD
+        if "FDeltaH" in self.parameters:
+            self.parameters['FDeltaH']['value'] = FDH
+        if "PinPowerPeaking" in self.parameters:
+            self.parameters['PinPowerPeaking']['value'] = FQ
+        if "max_boron" in self.parameters:
+            self.parameters["max_boron"]['value'] = Boron
+          
 
     def evaluate(self):
         """
@@ -1026,6 +1082,8 @@ class Unique_Assembly_Loading_Pattern_Solution(Simulate_Loading_Pattern_Solution
                     if chromosome_map[ge]['map'][i] == 1:
                         self.genome[i] = ge
                         bad_gene_list.remove(ge)
+
+    
 
     def evaluate(self):
         """
@@ -2084,6 +2142,73 @@ class File_Writer(object):
         file_.close()
 
     @staticmethod
+    def write_input_file_NuScale(solution):
+        """
+        Writes the input files for the reactor core.
+        """
+        file_ = open("genome_key",'rb')
+        genome_key = pickle.load(file_)
+        file_.close()
+
+        if solution.batch_number <=1:
+            loading_pattern = File_Writer.serial_loading_pattern_Nuscale(solution,genome_key)
+        else:
+            loading_pattern = File_Writer.label_loading_pattern_NuScale(solution,genome_key)
+
+        os.system(f"mkdir {solution.name}")
+        os.system(f"cp {solution.library} {solution.name}/")
+        file_ = open(f"{solution.name}/{solution.name}_sim.inp",'w')
+        if solution.batch_number <= 1:
+            file_.write(f"'RES' '../{solution.restart_file}' {solution.load_point}/\n")
+        else:
+            file_.write(f"'DIM.PWR' {solution.core_width}/\n")
+            file_.write(f"'DIM.CAL' {solution.axial_nodes} 2 2/\n")
+            file_.write("'DIM.DEP' 'EXP' 'PIN' 'HTMO' 'HBOR' 'HTF' 'XEN' 'SAM' 'EBP'/     \n")
+        file_.write("\n")
+        file_.write(loading_pattern)
+        file_.write("\n")
+        if solution.batch_number <=1:
+            pass
+        else:
+            file_.write(f"'RES' '../{solution.restart_file}' {solution.load_point}/\n")
+            if hasattr(solution,'fuel_segments'):
+                for i,seg in enumerate(solution.fuel_segments):
+                    if not i:
+                        file_.write(f"'SEG.LIB'  ,{seg} '{solution.fuel_segments[seg]}'/ \n")
+                    else:
+                        file_.write(f"           ,{seg} '{solution.fuel_segments[seg]}'/ \n")
+        file_.write(f"'COR.OPE' {solution.power}, {solution.flow}, {solution.pressure}/\n")
+        file_.write("'COR.TIN' {}/ \n".format(solution.inlet_temperature))
+        file_.write("\n")
+        if solution.batch_number >= 2:
+            file_.write(f"'BAT.LAB' {solution.batch_number} 'CYC-{solution.batch_number}' /\n")
+            file_.write(f"'DEP.CYC' 'CYCLE{solution.batch_number}' 0.0 {solution.batch_number}/\n")
+        file_.write(f"'DEP.STA' 'AVE' 0.0 0.5 1 2 -1 {solution.depletion} /\n")
+        file_.write("'COM' The following performs an automated search on cycle length at a boron concentration of 10 ppm\n")
+        file_.write("'ITE.SRC' 'SET' 'EOLEXP' , , 0.02, , , , , , 'MINBOR' 10., , , , , 4, 4, , , /\n")
+        if not solution.core_edits: 
+            pass
+        else:
+            line = "'PRI.STA' "
+            assembly_edits = ('2EXP','2RPF')
+            pin_edits = ('3PIN','3PXP','3KWF')
+            for edit in solution.core_edits:
+                if edit in assembly_edits:
+                    line += f"{edit} "
+                file_.write(line+"/\n")
+            line = "'PIN.EDT' 'ON' "
+            for edit in solution.core_edits:
+                if edit in pin_edits:
+                    line += f"{edit} "
+            file_.write(line+ "/\n")
+            file_.write("'PIN.ASM' 'ALL-3D'/\n")
+        file_.write("'STA'/\n")
+        file_.write("'END'/\n")
+        file_.close()
+
+
+
+    @staticmethod
     def return_core_blueprint(solution):
         """
         Returns the appropriate core map type for the optimization problem
@@ -2134,6 +2259,57 @@ class File_Writer(object):
 
         row_count = 1
         loading_pattern = ""
+        for row in range(25):   #I doubt a problem will ever be larger than a 25 by 25 core
+            if row in problem_map:                 #it will just work
+                loading_pattern += f"'FUE.TYP'  {row_count}," 
+                for col in range(25):  #so I hard coded the value because if I did this algorithm right  
+                    if col in problem_map[row]:
+                        if not problem_map[row][col]:
+                            if type(problem_map[row][col]) == int:
+                                gene_number = problem_map[row][col]
+                                gene = solution.genome[gene_number]
+                                value = genome_key[gene]['type']
+                                str_ = f"{value}"
+                                loading_pattern += f"{str_.rjust(number_spaces)}"
+                            else:
+                                loading_pattern += f"{'0'.rjust(number_spaces)}"
+                            
+                        else:
+                            gene_number = problem_map[row][col]
+                            gene = solution.genome[gene_number]
+                            value = genome_key[gene]['type']
+                            str_ = f"{value}"
+                            loading_pattern += f"{str_.rjust(number_spaces)}"
+
+
+                loading_pattern += "/\n"
+                row_count += 1
+
+        loading_pattern += "\n"
+
+        return loading_pattern
+    
+    @staticmethod
+    def serial_loading_pattern_Nuscale(solution,genome_key):
+        """
+        Writes a core loading pattern using serial numbers as the loading
+        pattern designator.
+
+        Written by Brian Andersen 4/5/2020
+        """
+        biggest_number = 0
+        for gene in genome_key:
+            if gene == "additional_information" or gene == 'symmetry_list':
+                pass
+            else:
+                if genome_key[gene]['type'] > biggest_number:
+                    biggest_number = genome_key[gene]['type']
+        
+        number_spaces = len(str(biggest_number)) + 1
+        problem_map = File_Writer.return_core_blueprint(solution) 
+
+        row_count = 1
+        loading_pattern = ""
         for row in range(25):    #I doubt a problem will ever be larger than a 25 by 25 core
             if row in problem_map:                 #it will just work
                 loading_pattern += f"'FUE.TYP'  {row_count}," 
@@ -2159,7 +2335,105 @@ class File_Writer(object):
 
         loading_pattern += "\n"
 
-        return loading_pattern
+        new_loading_pattern = loading_pattern.replace(loading_pattern[11:15],"1, 2")  
+        # with open("helpfiles.txt","a") as f:
+        #     f.write(new_loading_pattern)
+
+        return new_loading_pattern
+
+
+    @staticmethod
+    def label_loading_pattern_NuScale(solution,genome_key):
+        """
+        Writes a core loading pattern using assembly type as the loading
+        pattern designator.
+
+        Written by Brian Andersen 4/5/2020
+        """
+        biggest_number = 0
+        pass_set = set(['additional_information','symmetry_list'])
+        for gene in genome_key:
+            if gene in pass_set:
+                pass
+            else:
+                if type(genome_key[gene]['type']) == list:
+                    pass
+                else:
+                    if genome_key[gene]['type'] > biggest_number:
+                        biggest_number = genome_key[gene]['type']
+        largest_label = f"TYPE{biggest_number}"
+        magnitude = len(largest_label) #Pop Pop
+
+        blank = ""
+        for l in largest_label:
+            blank += " "
+        problem_map = File_Writer.return_core_blueprint(solution) 
+
+        loading_pattern = f"'FUE.LAB',{len(largest_label)}/\n"
+        count_dictionary = {}
+        for row in range(25):
+            if row in problem_map:
+                if row+1 < 10:
+                    loading_pattern += f"{row+1}   1 "
+                else:
+                    loading_pattern += f"{row+1}  1 "
+                for col in range(25):
+                    if col in problem_map[row]:
+                        if not problem_map[row][col]:
+                            if type(problem_map[row][col]) == int:
+                                gene_number = problem_map[row][col]
+                                gene = solution.genome[gene_number]
+                                if type(genome_key[gene]['type']) == list:
+                                    value = genome_key[gene]['type'].pop()
+                                    if len(value) < 4:
+                                        print(f"WARNING: You probably left the zero out of the assembly position for {value}.")
+                                        print("NCSU core simulator Run May FAIL.")
+                                else:
+                                    value = str(genome_key[gene]['type'])
+                                    if len(value) == 1:
+                                        value = value = f"TYPE0{value}"
+                                    else: 
+                                        value = f"TYPE{value}"
+                                    if gene in count_dictionary:
+                                        count_dictionary[gene]+=1
+                                    else:
+                                        count_dictionary[gene] = 1
+                                loading_pattern += f"{value.ljust(magnitude)} "
+                            else:
+                                loading_pattern += f"{blank} "
+                        else:
+                            gene_number = problem_map[row][col]
+                            gene = solution.genome[gene_number]
+                            if type(genome_key[gene]['type']) == list:
+                                value = genome_key[gene]['type'].pop()
+                                if len(value) < 4:
+                                    print(f"WARNING: You probably left the zero out of the assembly position for {value}.")
+                                    print("NCSU core simulator Run May FAIL.")
+                            else:
+                                value = str(genome_key[gene]['type'])
+                                if len(value) == 1:
+                                    value = value = f"TYPE0{value}"
+                                else: 
+                                    value = f"TYPE{value}"
+                                if gene in count_dictionary:
+                                    count_dictionary[gene]+=1
+                                else:
+                                    count_dictionary[gene] = 1
+                            loading_pattern += f"{value.ljust(magnitude)} "
+                loading_pattern += "\n"
+        loading_pattern += "0    0\n\n"
+        for gene in count_dictionary:
+            foo = str(genome_key[gene]['type'])
+            if len(foo) == 1:
+                loading_pattern += f"'FUE.NEW', 'TYPE0{genome_key[gene]['type']}', {genome_key[gene]['serial']}, "
+            else:
+                loading_pattern += f"'FUE.NEW', 'TYPE{genome_key[gene]['type']}', {genome_key[gene]['serial']}, "
+            loading_pattern += f"{count_dictionary[gene]}, {genome_key[gene]['type']},,,{solution.batch_number}/\n"
+
+        loading_pattern += "\n"
+        
+        new_loading_pattern = loading_pattern.replace(loading_pattern[11:15],"1, 2")  
+        return new_loading_pattern
 
     @staticmethod
     def label_loading_pattern(solution,genome_key):
@@ -2840,8 +3114,25 @@ CORE_MAPS['QUARTER']['OCTANT'][241]['WITHOUT_REFLECTOR'] = {8:{8:0,  9:1,  10:3,
                                                            15:{8:28, 9:29, 10:30, 11:31, 12:32,  13:33,  14:None,15:None,16:None},     
                                                            16:{8:34, 9:35, 10:36, 11:37, 12:None,13:None,14:None,15:None,16:None}}
 
+CORE_MAPS['QUARTER']['OCTANT'][37] = {}
+CORE_MAPS['QUARTER']['OCTANT'][37]['WITHOUT_REFLECTOR'] = {5:{5:0,   6:1,   7:3,   8:6,   9:None}, 
+                                                           6:{5:1,   6:2,   7:4,   8:7,   9:None}, 
+                                                           7:{5:3,   6:4,   7:5,   8:None,9:None}, 
+                                                           8:{5:6,   6:7,   7:None,8:None,9:None}, 
+                                                           9:{5:None,6:None,7:None,8:None,9:None}} 
+                                                
+                                                
+                                                
+                                                
 
-
-                                                              
+CORE_MAPS['QUARTER']['OCTANT'][37]['WITH_REFLECTOR'] = {5:{5:0, 6:1, 7:3, 8:6,   9:10  },   
+                                                        6:{5:1, 6:2, 7:4, 8:7,   9:11  },   
+                                                        7:{5:3, 6:4, 7:5, 8:8,   9:12  },   
+                                                        8:{5:6, 6:7, 7:8, 8:9,   9:None},   
+                                                        9:{5:10,6:11,7:12,8:None,9:None}}   
+                                                       
+                                                       
+                                                       
+                                                                                                      
                                                                                  
     
