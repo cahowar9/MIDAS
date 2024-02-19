@@ -1,12 +1,10 @@
 import random
-import multiprocessing
-from multiprocessing import Pool
 import time
-
+start_time=time.time()
 def generate_list(length):
     return [random.randint(1, length) for _ in range(length)]
 
-def generate_initial_population(population_size, list_length):
+def generate_initial_population(population_size,list_length):
     return [generate_list(list_length) for _ in range(population_size)]
 
 def fitness(lst):
@@ -15,10 +13,9 @@ def fitness(lst):
     for index, value in enumerate(lst):
         difference = abs(value - (index+1))
         total_sum += difference
-
     return total_sum
 
-def choose_parents(population, num_parents):
+def choose_parents(population,num_parents):
     parents = sorted(population, key=fitness)[:num_parents]
     return parents
 
@@ -36,7 +33,9 @@ def mutate(child, mutation_rate, length):
 def new_generation(population, generations, mutation_rate, list_length):
     for generation in range(generations):
         population.sort(key=fitness)
-        
+        pop_fitness=[]
+        for elt in population:
+            fitness.append(fitness(elt))
         if len(population) < 2:
             continue  
 
@@ -49,28 +48,19 @@ def new_generation(population, generations, mutation_rate, list_length):
     population.sort(key=fitness)
     return population
 
-def GA_sort(inputs):
-    list_length, population_size, generations, mutation_rate = inputs
+def GA_sort(list_length, population_size, generations, mutation_rate):
     population = generate_initial_population(population_size, list_length)
     evolved_population = new_generation(population, generations, mutation_rate, list_length)
     return evolved_population[0]
-start_time=time.time()
-if __name__ == "__main__":
-    num_processes = multiprocessing.cpu_count()
-    list_length = 10
-    population_size = 10
-    generations = 2000
-    mutation_rate = 0.1
 
-    inputs = [(list_length, population_size, generations, mutation_rate)] * num_processes
+list_length = 10
+population_size = 2
+generations = 1
+mutation_rate = 0.1
 
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        sorted_lists = pool.map(GA_sort, inputs)
-
-    best_result = min(sorted_lists, key=fitness)
-
-    print("Best Result:", best_result)
-    print("Fitness Value:", fitness(best_result))
+sorted_list = GA_sort(list_length, population_size, generations, mutation_rate)
+print("Sorted List:", sorted_list)
+print("Fitness Value:", fitness(sorted_list))
 end_time=time.time()
 runtime=end_time-start_time
 print("Run time:",runtime)
