@@ -1,6 +1,7 @@
 import random
 from deap import creator, base, tools, algorithms
 import time
+#testing
 start = time.time()
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
