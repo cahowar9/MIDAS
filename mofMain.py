@@ -45,8 +45,12 @@ class Optimization_Factory(object):
         Written by Brian Andersen. 1/7/2019
         """
         methodology = self.file_settings['optimization']['methodology']
+        option = self.file_settings['optimization']['method_option']
         if methodology == 'genetic_algorithm':
-            self.build_genetic_algorithm()
+            if option == 'base':
+                self.build_genetic_algorithm()
+            elif option == 'deap':
+                self.build_genetic_algorithm_deap()
         elif methodology == 'simulated_annealing':
             self.build_simulated_annealing()
         elif methodology == 'reinforcement_learning':
@@ -59,6 +63,9 @@ class Optimization_Factory(object):
             raise ValueError("Optimization Type Not Supported")
 
         return self.optimization
+
+    def build_genetic_algorithm_deap(self):
+        return(1)
 
     def build_genetic_algorithm(self):
         """
