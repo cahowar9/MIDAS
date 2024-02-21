@@ -48,9 +48,7 @@ class Optimization_Factory(object):
         methodology = self.file_settings['optimization']['methodology']
         option = self.file_settings['optimization']['method_option']
         if methodology == 'genetic_algorithm':
-            if option == 'base':
-                self.build_genetic_algorithm()
-            elif option == 'deap':
+            if option == 'deap':
                 self.build_genetic_algorithm_deap()
         elif methodology == 'simulated_annealing':
             self.build_simulated_annealing()
