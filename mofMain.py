@@ -17,6 +17,7 @@ from midas.applications.ncsu_lattice import Simulate_Lattice
 from midas.applications import ncsu_core
 from midas.utils import fitness
 from midas.applications import parcs_332
+from midas.applications import list
 
 
 class Optimization_Factory(object):
@@ -196,6 +197,8 @@ class Optimization_Factory(object):
             solution_type = parcs_332.Loading_PatternSimple_Solution
         elif data_type_string.lower() == "fixed_loading_pattern":
             solution_type = ncsu_core.Unique_Assembly_Loading_Pattern_Solution
+        elif data_type_string.lower() == "list":
+            solution_type = list.list_solution
         else:
             raise TypeError("Unsupported Solution Type Implemented")
         
