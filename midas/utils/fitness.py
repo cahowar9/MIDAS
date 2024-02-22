@@ -544,6 +544,9 @@ class Quantum_Fitness(Fitness):
         return solution_list
     
 class ordered_list_fitness(Fitness):
+    """
+    Creates the fitness function to maximize the fitness of a properly ordered ascending list of integers greater than zero
+    """
     def __init__(self):
         Fitness.__init__(self)
     
