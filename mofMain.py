@@ -459,6 +459,8 @@ class Optimization_Factory(object):
                 return fitness.Fitness()
         elif fit_method == 'quantum':
             return fitness.Quantum_Fitness()
+        elif fit_method == 'ordered_list':
+            return fitness.ordered_list_fitness()
         #The Fitness functions are designed so that minimizing the score is the objective.
         #Genetic algorithms work the opposite way. The fitness maximizer corrects this 
         #situation.

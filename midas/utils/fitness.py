@@ -542,3 +542,19 @@ class Quantum_Fitness(Fitness):
                 solution.fitness -= 2*(Fq-2.2)
 
         return solution_list
+    
+class ordered_list_fitness(Fitness):
+    def __init__(self):
+        Fitness.__init__(self)
+    
+    def calculate(self,solution_list):
+        length = len(solution_list)
+        ideal_sequence = list(range(1,length+1))
+        fitness = 0
+        for solution in solution_list:
+            for i in range (length-1):
+                if solution[i] > solution[i+1]:
+                    fitness += 1
+            solution.fitness = length - fitness
+        
+        return solution_list
