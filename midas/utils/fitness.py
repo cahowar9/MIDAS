@@ -552,7 +552,6 @@ class ordered_list_fitness(Fitness):
     
     def calculate(self,solution_list):
         length = len(solution_list)
-        ideal_sequence = list(range(1,length+1))
         fitness = 0
         for solution in solution_list:
             for i in range (length-1):
