@@ -2176,3 +2176,12 @@ class Genetic_Algorithm_deap(object):
         self.selection = selection
         self.num_procs = num_procs
         self.file_settings = file_settings
+    
+    def generate_initial_solutions(self,name):
+        return(1)
+    
+    def main_in_parallel(self):
+        return(1)
+
+    def main_in_serial(self):
+        return(1)
