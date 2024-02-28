@@ -2159,3 +2159,20 @@ class Genetic_Algorithm(object):
         track_file.close()
         all_values.close()
         opt.plotter()
+
+class Genetic_Algorithm_deap(object):
+    def __init__(self, solution,
+                 population,
+                 generation,
+                 reproduction,
+                 selection,
+                 num_procs,
+                 file_settings):
+    
+        self.solution = solution
+        self.population = population
+        self.generation = generation
+        self.repodroduction = reproduction
+        self.selection = selection
+        self.num_procs = num_procs
+        self.file_settings = file_settings
