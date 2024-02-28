@@ -11,10 +11,12 @@ import pickle
 import shutil
 import random
 import numpy as np
+from scipy.stats import spearmanr
 from multiprocessing import Pool
 from midas.utils import fitness
 from midas.utils.solution_types import evaluate_function,Unique_Solution_Analyzer,test_evaluate_function
 from midas.utils.metrics import Optimization_Metric_Toolbox
+from midas.utils.Termination_Criteria import GA_Termination_Criteria
 
 """
 This file is for storing all the classes and methods specifically related to
@@ -1699,50 +1701,32 @@ class Genetic_Algorithm(object):
         Written by Brian Andersen 1/9/2020
         """
         opt = Optimization_Metric_Toolbox()
+        TC = GA_Termination_Criteria()
 
         track_file = open('optimization_track_file.txt', 'w')
         track_file.write("Beginning Optimization \n")
         track_file.close()
-
-        allpatterns = open("allpatterns.txt","w")
-        allpatterns.close()
-
-        # def printlp(name, solution):
-        #     loading_pattern_tracker.write("\n"+"\n"+name+"\n")
-        #     x = 0
-        #     lp = solution.genome
-        #     y = [1,2,3,4,5,6,6,5]
-        #     for j in y:
-        #         for i in range(j):
-        #             loading_pattern_tracker.write(str(lp[x])+" ")
-        #             x += 1
-        #         loading_pattern_tracker.write("\n") 
-
+       
 
         for i in range(self.population.size):
             foo = self.generate_initial_solutions(f'initial_parent_{i}')
             if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
                 foo.evaluateVerification()
-            else:
-                 foo.evaluate()      
-            self.population.parents.append(foo)
 
-            # -------
-            # printlp(f'initial_parent_{i}',foo)
-            # -------
+            else:
+                 foo.evaluate()
+                           
+            self.population.parents.append(foo)
 
 
         for i in range(self.population.size):
             foo = self.generate_initial_solutions(f'initial_child_{i}')
             if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
                 foo.evaluateVerification()
+
             else:
                 foo.evaluate()  
             self.population.children.append(foo)
-
-            # ------
-            # printlp(f'initial_parent_{i}',foo)
-            # ------
 
       #  self.population.parents = map(evaluate_function, self.population.parents)
       #  self.population.children = map(evaluate_function, self.population.children)
@@ -1750,33 +1734,64 @@ class Genetic_Algorithm(object):
         opt.check_best_worst_average(self.population.parents)
         opt.write_track_file(self.population, self.generation)
 
-#        scrambler = Fixed_Genome_Mutator(1,1,200,self.file_settings)
+#        scrambler = Fixed_Genom
+# e_Mutator(1,1,200,self.file_settings)
 #        uniqueness = Unique_Solution_Analyzer(scrambler)
-        for self.generation.current in range(self.generation.total):
-            self.population.children = self.repodroduction.reproduce(self.population.parents, 
-                                                                     self.solution)
-#            self.population.children = uniqueness.analyze(self.population.children)
-            for i,solution in enumerate(self.population.children):
-                solution.name = "child_{}_{}".format(self.generation.current, i)
-                solution.parameters = copy.deepcopy(self.file_settings['optimization']['objectives'])
-                solution.add_additional_information(self.file_settings)
-                if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
-                    solution.evaluateVerification()
-                else:
-                    solution.evaluate()
-            
-                # ------
-                # printlp(f'initial_parent_{i}',foo)
-                # ------
+        
+        x = 0 
+        self.generation.current = 0
+        if x == 0:
+            # for self.generation.current in range(self.generation.total):
+            while TC.Consecutive_Generations < 5:
+                self.population.children = self.repodroduction.reproduce(self.population.parents, 
+                                                                        self.solution)
 
-           # self.population.children = map(evaluate_function, self.population.children)
+    #            self.population.children = uniqueness.analyze(self.population.children)
+                for i,solution in enumerate(self.population.children):
+                    solution.name = "child_{}_{}".format(self.generation.current, i)
+                    solution.parameters = copy.deepcopy(self.file_settings['optimization']['objectives'])
+                    solution.add_additional_information(self.file_settings)
+                    if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
+                        solution.evaluateVerification()
+                    else:
+                        solution.evaluate()
+                
+            # self.population.children = map(evaluate_function, self.population.children)
 
-            self.population = self.selection.perform(self.population)
-            opt.check_best_worst_average(self.population.parents)
-            opt.write_track_file(self.population, self.generation)
+
+                self.population = self.selection.perform(self.population)
+                opt.check_best_worst_average(self.population.parents)
+                opt.write_track_file(self.population, self.generation)
+
+                TC.Consectutive_Fitness(self.population.parents)
+
+                self.generation.current += 1
+
+
+        if x == 1:        
+            for self.generation.current in range(self.generation.total):
+                self.population.children = self.repodroduction.reproduce(self.population.parents, 
+                                                                        self.solution)
+                
+                AllDistance = []
+    #            self.population.children = uniqueness.analyze(self.population.children)
+                for i,solution in enumerate(self.population.children):
+                    solution.name = "child_{}_{}".format(self.generation.current, i)
+                    solution.parameters = copy.deepcopy(self.file_settings['optimization']['objectives'])
+                    solution.add_additional_information(self.file_settings)
+                    if self.file_settings['optimization']['NuScale_Data_Base'] ==  True:
+                        solution.evaluateVerification()
+                    else:
+                        solution.evaluate()
+
+            # self.population.children = map(evaluate_function, self.population.children)
+
+                self.population = self.selection.perform(self.population)
+                opt.check_best_worst_average(self.population.parents)
+                opt.write_track_file(self.population, self.generation)
 
         opt.record_optimized_solutions(self.population)
-
+        
         track_file = open('optimization_track_file.txt','a')
         track_file.write("End of Optimization \n")
         track_file.close()
