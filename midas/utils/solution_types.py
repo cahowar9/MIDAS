@@ -130,6 +130,15 @@ def evaluate_function(solution):
 
     return solution
 
+def Nuscale_evaluate_function(solution):
+    """
+    This performs the same function as evaluate_function(solution) but for NuScale
+    Written by Jake Mikouchi. 3/6/2024
+    """
+    solution.evaluateVerification()
+
+    return solution
+
 def test_evaluate_function(solution):
     """
     Executes the method solution.evaluate(). This intermediate step is 
