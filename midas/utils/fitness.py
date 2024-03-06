@@ -551,7 +551,7 @@ class ordered_list_fitness(Fitness):
         Fitness.__init__(self)
     
     def calculate(self,solution_list):
-        length = len(solution_list)
+        length = len(solution_list[-1])
         fitness = 0
         for solution in solution_list:
             for i in range (length-1):
