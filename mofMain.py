@@ -46,7 +46,7 @@ class Optimization_Factory(object):
         Written by Brian Andersen. 1/7/2019
         """
         methodology = self.file_settings['optimization']['methodology']
-        option = self.file_settings['optimization']['method_option']
+        option = self.file_settings['optimization']['method']['method_option']
         if methodology == 'genetic_algorithm':
             if option == 'deap':
                 self.build_genetic_algorithm_deap()
@@ -474,7 +474,7 @@ class Optimization_Factory(object):
         elif fit_method == 'quantum':
             return fitness.Quantum_Fitness()
         elif fit_method == 'ordered_list':
-            return fitness.ordered_list_fitness()
+            return fitness.ascending_list_fitness()
         #The Fitness functions are designed so that minimizing the score is the objective.
         #Genetic algorithms work the opposite way. The fitness maximizer corrects this 
         #situation.

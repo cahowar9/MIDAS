@@ -543,7 +543,7 @@ class Quantum_Fitness(Fitness):
 
         return solution_list
     
-class ordered_list_fitness(Fitness):
+class ascending_list_fitness(Fitness):
     """
     Creates the fitness function to maximize the fitness of a properly ordered ascending list of integers
 

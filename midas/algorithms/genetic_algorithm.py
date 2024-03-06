@@ -15,6 +15,7 @@ from multiprocessing import Pool
 from midas.utils import fitness
 from midas.utils.solution_types import evaluate_function,Unique_Solution_Analyzer,test_evaluate_function
 from midas.utils.metrics import Optimization_Metric_Toolbox
+from deap import creator, base, tools, algorithms
 
 """
 This file is for storing all the classes and methods specifically related to
