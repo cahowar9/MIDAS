@@ -1,8 +1,10 @@
 optimization: 
   methodology: genetic_algorithm
   population_size: 10
-  number_of_generations: 2
+  number_of_generations: 5
   NuScale_Data_Base: true
+  Termination_Criteria: Consecutive 
+  Termination_Generations: 5
   reproducer: unique_genes
   mutation:
     method: [mutate_by_type,mutate_fixed]
