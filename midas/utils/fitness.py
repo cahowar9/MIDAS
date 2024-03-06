@@ -546,6 +546,8 @@ class Quantum_Fitness(Fitness):
 class ordered_list_fitness(Fitness):
     """
     Creates the fitness function to maximize the fitness of a properly ordered ascending list of integers greater than zero
+
+    Created by Cole Howard, 2/28/2024
     """
     def __init__(self):
         Fitness.__init__(self)
