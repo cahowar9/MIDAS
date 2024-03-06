@@ -35,8 +35,23 @@ class GA_Termination_Criteria(object):
             self.Consecutive_Generations += 1
         else:
             self.Consecutive_Generations = 0
-
-        with open("test.txt","a") as f:
-            f.write("\n"+str(self.Current_Best_Fitness)+" "+str(self.Previous_Best_Fitness)+" "+str(self.Consecutive_Generations)) 
-
         
+    def Spearman_Fitness(self,population):
+        """
+        This Termination Criteria utilizes the Spearman rank coefficient
+        If the spearman rank does not change over a set number of generations, the optimization will automatically stop
+        
+        Jake Mikouchi 3/6/24
+        """
+
+        self.Previous_Best_Fitness = copy.deepcopy(self.Current_Best_Fitness)
+
+        for solution in population:
+            if solution.fitness > self.Current_Best_Fitness:
+                best_fitness = solution.fitness
+                self.Current_Best_Fitness = copy.deepcopy(best_fitness)
+        
+        if self.Current_Best_Fitness == self.Previous_Best_Fitness:
+            self.Consecutive_Generations += 1
+        else:
+            self.Consecutive_Generations = 0
