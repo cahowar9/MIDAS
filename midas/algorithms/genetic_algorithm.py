@@ -2182,7 +2182,19 @@ class Genetic_Algorithm_deap(object):
         return(1)
     
     def main_in_parallel(self):
-        return(1)
+        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMax)
+
+        toolbox = base.Toolbox()
+
+        toolbox.register("attr_bool", random.randint, 0, 10)
+        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=10)
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+        toolbox.register("evaluate", fitness.ascending_list_fitness)
+        toolbox.register("mate", tools.cxTwoPoint)
+        toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
+        toolbox.register("select", tools.selTournament, tournsize=3)
 
     def main_in_serial(self):
         return(1)
