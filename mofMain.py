@@ -66,6 +66,10 @@ class Optimization_Factory(object):
     def build_genetic_algorithm_deap(self):
         """
         Assigns all parts of genetic algorithm and uses DEAP GA library for optimization
+
+        Parameters: None
+
+        Written by Cole Howard, 2/28/2024
         """
         solution_type_ = self.build_solution()
         population_    = self.build_population()
