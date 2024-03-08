@@ -2192,7 +2192,7 @@ class Genetic_Algorithm_deap(object):
         toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=10)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
-        toolbox.register("evaluate", fitness.ascending_list_fitness)
+        toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
         toolbox.register("select", tools.selTournament, tournsize=3)
