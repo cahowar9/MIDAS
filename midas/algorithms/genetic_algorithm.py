@@ -12,6 +12,7 @@ import shutil
 import random
 import numpy as np
 from multiprocessing import Pool
+import multiprocessing
 from midas.utils import fitness
 from midas.utils.solution_types import evaluate_function,Unique_Solution_Analyzer,test_evaluate_function
 from midas.utils.metrics import Optimization_Metric_Toolbox
@@ -2195,6 +2196,21 @@ class Genetic_Algorithm_deap(object):
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
         toolbox.register("select", tools.selTournament, tournsize=3)
+        population = toolbox.population(n=100)
+
+        pool = multiprocessing.Pool(processes = self.num_procs)
+        toolbox.register("map",pool.map)
+        NGEN = 20000
+        for gen in range(NGEN):
+            offspring = algorithms.varAnd(population, toolbox, cxpb=0.5, mutpb=0.2)
+            fits = toolbox.map(toolbox.evaluate, offspring)
+            for fit, ind in zip(fits,offspring):
+                ind.fitness.values=fit
+            
+            population = toolbox.select(offspring, k=len(population))
+        
+        final_solution = tools.selBest(population, k=1)
+        print(final_solution)
 
     def main_in_serial(self):
         return(1)
