@@ -2180,7 +2180,7 @@ class Genetic_Algorithm_deap(object):
         self.file_settings = file_settings
     
     def generate_initial_solutions(self,name):
-        return(1)
+        self.parameters = copy.deepcopy(self.file_settings['optimization']['objectives'])
     
     def main_in_parallel(self):
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
