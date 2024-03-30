@@ -2213,4 +2213,30 @@ class Genetic_Algorithm_deap(object):
         print(final_solution)
 
     def main_in_serial(self):
-        return(1)
+        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMax)
+
+        toolbox = base.Toolbox()
+
+        toolbox.register("attr_bool", random.randint, 0, 10)
+        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=10)
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+        toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
+        toolbox.register("mate", tools.cxTwoPoint)
+        toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
+        toolbox.register("select", tools.selTournament, tournsize=3)
+        population = toolbox.population(n=100)
+
+        pool = multiprocessing.Pool(processes = self.num_procs)
+        NGEN = 20000
+        for gen in range(NGEN):
+            offspring = algorithms.varAnd(population, toolbox, cxpb=0.5, mutpb=0.2)
+            fits = toolbox.map(toolbox.evaluate, offspring)
+            for fit, ind in zip(fits,offspring):
+                ind.fitness.values=fit
+            
+            population = toolbox.select(offspring, k=len(population))
+        
+        final_solution = tools.selBest(population, k=1)
+        print(final_solution)
