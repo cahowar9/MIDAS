@@ -249,7 +249,7 @@ class Optimization_Factory(object):
             population_ = GA.Population()
             number_genes = calculate_number_gene_combinations(self.file_settings['genome']['chromosomes'])
             population_.calculate_size(number_genes)
-        elif self.file_settings['opimization']['method_option']=="deap":
+        elif self.file_settings['optimization']['method_option']=="deap":
             population_=population_setting
         else:
             population_ = GA.Population()
