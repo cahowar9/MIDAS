@@ -4,5 +4,6 @@ optimization:
   population_size: 10
   number_of_generations: 20000
   list_length: 10
+  data_type: list
 objectives:
   list: ordered_ascending
