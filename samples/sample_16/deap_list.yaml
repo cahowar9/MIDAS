@@ -7,3 +7,5 @@ optimization:
   data_type: list
 objectives:
   list: ordered_ascending
+genome:
+  chromosomes:
