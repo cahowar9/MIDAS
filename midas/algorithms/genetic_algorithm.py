@@ -2163,24 +2163,26 @@ class Genetic_Algorithm(object):
         opt.plotter()
 
 class Genetic_Algorithm_deap(object):
+    """
+    Class for optimizing a problem using GA library DEAP. Currently supports list type solutions, will explore other functions
+
+    Created by Cole Howard, 2/19/2024
+    """
     def __init__(self, solution,
                  population,
-                 generation,
-                 reproduction,
-                 selection,
+                 generations,
+                 list_length,
                  num_procs,
                  file_settings):
     
         self.solution = solution
         self.population = population
-        self.generation = generation
-        self.repodroduction = reproduction
-        self.selection = selection
+        self.generation = generations
+        self.list_length = list_length
         self.num_procs = num_procs
         self.file_settings = file_settings
     
-    def generate_initial_solutions(self,name):
-        self.parameters = copy.deepcopy(self.file_settings['optimization']['objectives'])
+
     
     def main_in_parallel(self):
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
@@ -2188,19 +2190,19 @@ class Genetic_Algorithm_deap(object):
 
         toolbox = base.Toolbox()
 
-        toolbox.register("attr_bool", random.randint, 0, 10)
-        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=10)
+        toolbox.register("attr_bool", random.randint, 0, self.list_length)
+        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=self.list_length)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
         toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
         toolbox.register("select", tools.selTournament, tournsize=3)
-        population = toolbox.population(n=100)
+        population = toolbox.population(n=self.population)
 
         pool = multiprocessing.Pool(processes = self.num_procs)
         toolbox.register("map",pool.map)
-        NGEN = 20000
+        NGEN = self.generation
         for gen in range(NGEN):
             offspring = algorithms.varAnd(population, toolbox, cxpb=0.5, mutpb=0.2)
             fits = toolbox.map(toolbox.evaluate, offspring)
@@ -2218,18 +2220,17 @@ class Genetic_Algorithm_deap(object):
 
         toolbox = base.Toolbox()
 
-        toolbox.register("attr_bool", random.randint, 0, 10)
-        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=10)
+        toolbox.register("attr_bool", random.randint, 0, self.list_length)
+        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=self.list_length)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
         toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
         toolbox.register("select", tools.selTournament, tournsize=3)
-        population = toolbox.population(n=100)
+        population = toolbox.population(n=self.population)
 
-        pool = multiprocessing.Pool(processes = self.num_procs)
-        NGEN = 20000
+        NGEN = self.generation
         for gen in range(NGEN):
             offspring = algorithms.varAnd(population, toolbox, cxpb=0.5, mutpb=0.2)
             fits = toolbox.map(toolbox.evaluate, offspring)

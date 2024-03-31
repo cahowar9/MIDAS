@@ -46,7 +46,7 @@ class Optimization_Factory(object):
         Written by Brian Andersen. 1/7/2019
         """
         methodology = self.file_settings['optimization']['methodology']
-        option = self.file_settings['optimization']['method']['method_option']
+        option = self.file_settings['optimization']['method_option']
         if methodology == 'genetic_algorithm':
             if option == 'deap':
                 self.build_genetic_algorithm_deap()
@@ -73,15 +73,13 @@ class Optimization_Factory(object):
         """
         solution_type_ = self.build_solution()
         population_    = self.build_population()
+        list_length_   = self.build_list_length()
         generation_    = self.build_generation()
-        reproduction_  = self.build_reproduction()
-        selection_     = self.build_selection()
         self.optimization = GA.Genetic_Algorithm_deap(solution=solution_type_,
                                              population=population_,
-                                             generation=generation_,
-                                             reproduction=reproduction_,
-                                             selection=selection_,
                                              num_procs= self.num_procs,
+                                             list_length = list_length_,
+                                             generations = generation_,
                                              file_settings=self.file_settings)
 
     def build_genetic_algorithm(self):
@@ -162,6 +160,15 @@ class Optimization_Factory(object):
                                              fitness=fitness_,
                                              num_procs= self.num_procs,
                                              file_settings=self.file_settings)
+    
+    def build_list_length(self):
+        """
+        Assigns the length of the list to the optimization problem, used for DEAP GA library optimization
+
+        Created by Cole Howard, 3/30/2024
+        """
+        list_info = self.file_settings['optimization']['list_length']
+        return(list_info)
 
     def build_volcano(self):
         """
@@ -234,13 +241,18 @@ class Optimization_Factory(object):
         Parameters: None
 
         Written by Brian Andersen. 1/7/2019
+
+        Modified by Cole Howard, 3/30/2024
         """
-        population_ = GA.Population()
         population_setting = self.file_settings['optimization']['population_size']
         if population_setting == 'calculate_from_genes':
+            population_ = GA.Population()
             number_genes = calculate_number_gene_combinations(self.file_settings['genome']['chromosomes'])
             population_.calculate_size(number_genes)
+        elif self.file_settings['opimization']['method_option']=="deap":
+            population_=population_setting
         else:
+            population_ = GA.Population()
             population_.size = population_setting
 
         return population_
@@ -254,12 +266,17 @@ class Optimization_Factory(object):
         Parameters: None
 
         Written by Brian Andersen. 1/7/2019
+
+        Modified by Cole Howard, 3/30/2024
         """
-        generation_ = GA.Generation()
         if self.file_settings['optimization']['number_of_generations'] == 'calculate_from_genes':
+            generation_ = GA.Generation()
             number_genes = calculate_number_gene_combinations(self.file_settings['genome']['chromosomes'])
             generation_.calculate_total_generations(number_genes)
+        elif self.file_settings['optimization']['method_option']=='deap':
+            generation_ = self.file_settings['optimization']['number_of_generations']
         else:
+            generation_ = GA.Generation()
             generation_.total = self.file_settings['optimization']['number_of_generations']
 
         return generation_

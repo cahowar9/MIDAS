@@ -12,18 +12,4 @@ class list_solution(Solution):
         Solution.__init__(self)
         self.type = None
     
-    def add_additional_information(self, settings):
-        """
-        Adds information into the list solution type. For now, only needs the length of each list in the population
-
-        Created by Cole Howard, 2/28/2024
-        """
-        info = settings['genome']['list_data']
-
-        if 'list_length' in info:
-            self.list_length = info['list_length']
-        
-    
-    def evaluate(self):
-        return(1)
     
