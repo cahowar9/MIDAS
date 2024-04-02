@@ -19,6 +19,7 @@ from midas.utils.solution_types import Nuscale_evaluate_function,Unique_Solution
 from midas.utils.metrics import Optimization_Metric_Toolbox
 from midas.utils.Termination_Criteria import GA_Termination_Criteria
 
+
 """
 This file is for storing all the classes and methods specifically related to
 performing an optimization via the genetic algorithm.
@@ -85,8 +86,33 @@ class GA_Selection(object):
         self.solution_front = solution_front
         self.method = method
 
+
     @staticmethod
-    def tournament(solution_list, desired_number_solutions):
+    def Elitism(solution_list, file_settings):
+
+        solution_list = copy.deepcopy(solution_list)
+        Prev_solution_list = solution_list[:file_settings['optimization']['population_size']]
+
+        Elites = []
+        
+        for solution in Prev_solution_list:
+            if len(Elites) < file_settings['optimization']['Elitism']:
+                Elites.append(solution)
+                Elites.sort(key=lambda x: x.fitness, reverse=True)
+            else:
+                for j in range(len(Elites)):
+                    if solution.fitness >= Elites[j].fitness:
+                        Elites.insert(j, solution)
+                        Elites = Elites[:file_settings['optimization']['Elitism']]
+                        break
+        
+        solution_list = [solution for solution in solution_list if solution not in Elites]
+
+        return Elites, solution_list
+
+
+    @staticmethod
+    def tournament(solution_list, desired_number_solutions, file_settings):
         """Performs a tournament selection of the solutions. Can be used for determining
         solution front or parents for the next generation or whatever.
 
@@ -103,10 +129,17 @@ class GA_Selection(object):
 
         Written by Brian Andersen. 1/9/2020
         """
-        unused_solutions = solution_list[:]
-        used_solutions = []
-        winners = []
-        for i in range(desired_number_solutions):
+        # GA_Selection.Elitism(solution_list)
+        if 'Elitism' in file_settings['optimization'] and file_settings['optimization']['Elitism'] > 0:
+            winners, unused_solutions = GA_Selection.Elitism(solution_list, file_settings)
+            used_solutions = []
+
+        else:
+            unused_solutions = solution_list[:]
+            used_solutions = []
+            winners = []
+
+        for i in range(desired_number_solutions-len(winners)):
             one = random.choice(unused_solutions)
             two = random.choice(unused_solutions)
             while one == two:
@@ -130,6 +163,7 @@ class GA_Selection(object):
             unused_solutions.remove(two)
 
         return winners
+    
 
     @staticmethod
     def roulette(solution_list, desired_number_solutions):
@@ -160,7 +194,7 @@ class GA_Selection(object):
 
         return winners
 
-    def perform(self, population_class):
+    def perform(self, population_class, file_settings):
         solution_list = copy.deepcopy(population_class.parents)
         solution_list.extend(population_class.children)
 
@@ -171,7 +205,7 @@ class GA_Selection(object):
         solution_list = self.fitness.calculate(solution_list)
         population_class.solution_front = self.solution_front.calculate(solution_list)
         if not population_class.solution_front:
-            population_class.parents = self.method(solution_list, population_class.size)
+            population_class.parents = self.method(solution_list, population_class.size, file_settings)
         else:
             population_class.parents = self.method(population_class.solution_front,
                                                    population_class.size)
@@ -1764,7 +1798,7 @@ class Genetic_Algorithm(object):
                 foo.evaluate()  
             self.population.children.append(foo)
 
-        self.population = self.selection.perform(self.population)
+        self.population = self.selection.perform(self.population,self.file_settings)
         opt.check_best_worst_average(self.population.parents)
         opt.write_track_file(self.population, self.generation)
   
@@ -1784,7 +1818,7 @@ class Genetic_Algorithm(object):
 
         # self.population.children = map(evaluate_function, self.population.children)
 
-            self.population = self.selection.perform(self.population)
+            self.population = self.selection.perform(self.population,  self.file_settings)
             opt.check_best_worst_average(self.population.parents)
             opt.write_track_file(self.population, self.generation)
 
