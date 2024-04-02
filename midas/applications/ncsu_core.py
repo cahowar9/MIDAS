@@ -409,6 +409,9 @@ class Simulate_Loading_Pattern_Solution(Solution):
             if not bad_gene_list:
                 no_genome_found = False    
 
+    def CoreRetieve(self):
+        core = File_Writer.NuscaleCoreRetrive(self)
+        return core
 
     def evaluateVerification(self):
         """
@@ -443,9 +446,6 @@ class Simulate_Loading_Pattern_Solution(Solution):
                     #    int(FAdata[3][0]),int(FAdata[3][1])
                     #    ]
         CorePatternName = FAdata[0][0]+FAdata[1][0]+FAdata[1][1]+FAdata[2][0]+FAdata[2][1]+FAdata[2][2]+FAdata[3][0]+FAdata[3][1]     
-        allpatterns = open("allpatterns.txt","a")
-        allpatterns.write(CorePatternName+"\n")
-        allpatterns.close()
         
         f = h5py.File("../../midas/NuScaleModel/Solutions_"+FAdata[1][0]+".hdf5", 'r')
 
@@ -2142,6 +2142,18 @@ class File_Writer(object):
         file_.close()
 
     @staticmethod
+    def NuscaleCoreRetrive(solution):
+        file_ = open("genome_key",'rb')
+        genome_key = pickle.load(file_)
+        file_.close()
+
+        if solution.batch_number <=1:
+            loading_pattern = File_Writer.serial_loading_pattern_Nuscale(solution,genome_key)
+        else:
+            loading_pattern = File_Writer.label_loading_pattern_NuScale(solution,genome_key)
+        return loading_pattern
+
+    @staticmethod
     def write_input_file_NuScale(solution):
         """
         Writes the input files for the reactor core.
@@ -2334,10 +2346,8 @@ class File_Writer(object):
                 row_count += 1
 
         loading_pattern += "\n"
-
         new_loading_pattern = loading_pattern.replace(loading_pattern[11:15],"1, 2")  
-        # with open("helpfiles.txt","a") as f:
-        #     f.write(new_loading_pattern)
+
 
         return new_loading_pattern
 
@@ -2431,7 +2441,6 @@ class File_Writer(object):
             loading_pattern += f"{count_dictionary[gene]}, {genome_key[gene]['type']},,,{solution.batch_number}/\n"
 
         loading_pattern += "\n"
-        
         new_loading_pattern = loading_pattern.replace(loading_pattern[11:15],"1, 2")  
         return new_loading_pattern
 
