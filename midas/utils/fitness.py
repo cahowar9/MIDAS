@@ -560,6 +560,6 @@ class ascending_list_fitness(Fitness):
                 fitness += 1
             elif (solution[i+1]-solution[i])>1:
                 fitness += 1
-        solution_fitness = 100 - (10*fitness)
+        solution_fitness = fitness
         
         return solution_fitness,
