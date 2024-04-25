@@ -552,7 +552,7 @@ class ascending_list_fitness(Fitness):
     def __init__(self):
         Fitness.__init__(self)
     
-    def calculate(self,solution):
+    def calculate(solution):
         length = len(solution)
         fitness = 0
         for i in range (length-1):
