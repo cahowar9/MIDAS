@@ -13,7 +13,6 @@ cd $SLURM_SUBMIT_DIR
 
 # Main -------------------------------------------------------------------------------------------------------------
 
-rm -rf solution_*
 python ../../mofMain.py --input deap_list.yaml --cpus 10
 
 
