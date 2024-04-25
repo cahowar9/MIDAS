@@ -2190,7 +2190,7 @@ class Genetic_Algorithm_deap(object):
 
         toolbox = base.Toolbox()
 
-        toolbox.register("attr_bool", random.randint, 0, self.list_length+1)
+        toolbox.register("attr_bool", random.randint, 1, self.list_length)
         toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=self.list_length)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
