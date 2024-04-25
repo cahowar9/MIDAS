@@ -2211,7 +2211,7 @@ class Genetic_Algorithm_deap(object):
             
             population = toolbox.select(offspring, k=len(population))
         
-        final_solution = tools.selBest(population, k=1)
+        final_solution = tools.selWorst(population, k=1)
         print(final_solution)
 
     def main_in_serial(self):
