@@ -560,4 +560,4 @@ class ascending_list_fitness(Fitness):
                 fitness += 1
         solution_fitness = length - fitness
         
-        return solution_fitness
+        return solution_fitness,
