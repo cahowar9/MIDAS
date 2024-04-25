@@ -1,8 +1,8 @@
 optimization: 
   methodology: genetic_algorithm
   method_option: deap
-  population_size: 10
-  number_of_generations: 20000
+  population_size: 50
+  number_of_generations: 200000
   list_length: 10
   data_type: list
 objectives:
