@@ -28,6 +28,11 @@ methods will form how other optimization methods alter their solutions.
 
 Written by Brian Andersen. 9/1/2019
 """
+def evalOneMax(individual):
+    ideal_sequence = list(range(1, 11))
+    differences = [abs(a - b) for a, b in zip(individual, ideal_sequence)]
+    fitness_value = 1 / (sum(differences) + .001)
+    return fitness_value
 
 class Population(object):
     """
@@ -2193,12 +2198,6 @@ class Genetic_Algorithm_deap(object):
         toolbox.register("attr_bool", random.randint, 0, self.list_length)
         toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=self.list_length)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-        
-        def evalOneMax(individual):
-            ideal_sequence = list(range(1, 11))
-            differences = [abs(a - b) for a, b in zip(individual, ideal_sequence)]
-            fitness_value = 1 / (sum(differences) + .001)
-            return fitness_value,
 
         toolbox.register("evaluate", evalOneMax)
         #toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
