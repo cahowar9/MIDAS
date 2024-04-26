@@ -2190,14 +2190,21 @@ class Genetic_Algorithm_deap(object):
 
         toolbox = base.Toolbox()
 
-        toolbox.register("attr_bool", random.randint, 1, self.list_length)
+        toolbox.register("attr_bool", random.randint, 0, self.list_length)
         toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=self.list_length)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+        
+        def evalOneMax(individual):
+            ideal_sequence = list(range(1, 11))
+            differences = [abs(a - b) for a, b in zip(individual, ideal_sequence)]
+            fitness_value = 1 / (sum(differences) + .001)
+            return fitness_value,
 
-        toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
+        toolbox.register("evaluate", evalOneMax)
+        #toolbox.register("evaluate", fitness.ascending_list_fitness.calculate)
         toolbox.register("mate", tools.cxTwoPoint)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-        toolbox.register("select", tools.selTournament, tournsize=3)
+        toolbox.register("select", tools.selTournament, tournsize=4)
         population = toolbox.population(n=self.population)
 
         pool = multiprocessing.Pool(processes = self.num_procs)
