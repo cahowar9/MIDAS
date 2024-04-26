@@ -32,7 +32,7 @@ def evalOneMax(individual):
     ideal_sequence = list(range(1, 11))
     differences = [abs(a - b) for a, b in zip(individual, ideal_sequence)]
     fitness_value = 1 / (sum(differences) + .001)
-    return fitness_value
+    return fitness_value,
 
 class Population(object):
     """
