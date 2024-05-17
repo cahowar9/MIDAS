@@ -166,12 +166,18 @@ class GA_Selection(object):
     
 
     @staticmethod
-    def roulette(solution_list, desired_number_solutions):
+    def roulette(solution_list, desired_number_solutions, file_settings):
         """Performs a roulette selction of the solutions. Can be used for determining
         solution front or parents for the next generation or whatever."""
-        unused_solutions = copy.deepcopy(solution_list)
-        winners = []
-        for i in range(desired_number_solutions):
+
+        if 'Elitism' in file_settings['optimization'] and file_settings['optimization']['Elitism'] > 0:
+            winners, unused_solutions = GA_Selection.Elitism(solution_list, file_settings)
+
+        else:
+            unused_solutions = copy.deepcopy(solution_list)
+            winners = []
+
+        for i in range(desired_number_solutions-len(winners)):
             probability_sum = 0
             selection_probability = {}
             selection_probability['low_bound'] = []
@@ -193,6 +199,114 @@ class GA_Selection(object):
                 unused_solutions = copy.deepcopy(solution_list)
 
         return winners
+
+    @staticmethod
+    def random(solution_list, desired_number_solutions, file_settings):
+        """Randomly selects the next set of parents
+        Jake Mikouchi 5/10/24
+        """
+
+        if 'Elitism' in file_settings['optimization'] and file_settings['optimization']['Elitism'] > 0:
+            winners, unused_solutions = GA_Selection.Elitism(solution_list, file_settings)
+            newwinners = random.choices(unused_solutions, k=desired_number_solutions-len(winners))
+            winners.extend(newwinners)
+
+        else:
+            unused_solutions = copy.deepcopy(solution_list)
+            winners = random.choices(unused_solutions, k=desired_number_solutions)
+
+        return winners
+    
+    @staticmethod
+    def ktournament(solution_list, desired_number_solutions, file_settings):
+        """
+        k-way tournament selection
+        places k random solutions in a tournament. The solution with the highest fitness is added to the winners.
+        The tournament size can be anything as long as its < len(solution_list)
+        k-way tournament works slightly different than tournament. tournament will delete any solutions that lost to a winner. k-way allows the loser to remain and try again in a future tournament.
+        Jake Mikouchi 5/10/24
+        """
+        kway = 4
+        if 'Elitism' in file_settings['optimization'] and file_settings['optimization']['Elitism'] > 0:
+            winners, unused_solutions = GA_Selection.Elitism(solution_list, file_settings)
+
+        else:
+            unused_solutions = solution_list[:]
+            winners = []
+
+        for i in range(desired_number_solutions-len(winners)):
+            ksols = random.choices(unused_solutions, k=kway)
+            ksolsfit = [i.fitness for i in ksols]
+
+            winners.append(ksols[ksolsfit.index(max(ksolsfit))])
+            unused_solutions.remove(ksols[ksolsfit.index(max(ksolsfit))])
+
+        return winners
+        
+    def truncation(solution_list, desired_number_solutions, file_settings):
+        """
+        Truncation Selection
+        orders the solution list in descending order and takes the top performers. Elitism is not needed, this selction method is elitism to the extreme
+        Jake Mikouchi 5/10/24
+        """
+
+        unused_solutions = solution_list[:]
+        winners = []
+        unused_solutions_fitness = [i.fitness for i in unused_solutions]
+
+        for i in range(0, len(unused_solutions_fitness)):
+            for j in range(i+1, len(unused_solutions_fitness)):
+                if unused_solutions_fitness[i] <= unused_solutions_fitness[j]:
+                    unused_solutions_fitness[i], unused_solutions_fitness[j] = unused_solutions_fitness[j],unused_solutions_fitness[i]
+                    unused_solutions[i], unused_solutions[j] = unused_solutions[j],unused_solutions[i]
+
+        winners = unused_solutions[:desired_number_solutions]
+
+        return winners
+    
+    def sus(solution_list, desired_number_solutions, file_settings):
+        """
+        stochastic universal sampling
+        SUS uses a single random value to sample all of the solutions by choosing them at evenly spaced intervals.
+        Jake Mikouchi 5/10/24
+        """
+
+        if 'Elitism' in file_settings['optimization'] and file_settings['optimization']['Elitism'] > 0:
+            winners, unused_solutions = GA_Selection.Elitism(solution_list, file_settings)
+
+        else:
+            unused_solutions = solution_list[:]
+            winners = []
+
+        unused_solutions_fitness = [i.fitness for i in unused_solutions]
+        for i in range(0, len(unused_solutions_fitness)):
+            for j in range(i+1, len(unused_solutions_fitness)):
+                if unused_solutions_fitness[i] <= unused_solutions_fitness[j]:
+                    unused_solutions_fitness[i], unused_solutions_fitness[j] = unused_solutions_fitness[j],unused_solutions_fitness[i]
+                    unused_solutions[i], unused_solutions[j] = unused_solutions[j],unused_solutions[i]
+
+
+        while len(winners) < desired_number_solutions:
+            unused_solutions_fitness = [i.fitness for i in unused_solutions]
+            average_unused_solutions_fitness = np.average(unused_solutions_fitness)
+            alpha = random.uniform(0,1)
+            delta = average_unused_solutions_fitness * alpha
+            Sum = unused_solutions_fitness[0]
+
+            for solution in unused_solutions:
+                if delta < Sum:
+                     winners.append(solution)
+                     delta = delta + Sum
+                     unused_solutions.remove(solution)
+
+                else: 
+                    Sum = Sum + solution.fitness 
+                
+                if len(winners) >= desired_number_solutions:
+                    break
+
+        return winners
+
 
     def perform(self, population_class, file_settings):
         solution_list = copy.deepcopy(population_class.parents)
@@ -418,6 +532,10 @@ class Reproduction(object):
         """
         first_mate_list  = []
         second_mate_list = []
+        with open("help.txt","w") as f:
+            f.write(str(len(first_mate_list))+" "+str(len(first_mate_list))+"\n")
+            f.write(str(len(self.mutation_list))+" "+str(len(self.crossover_list))+"\n")
+            
         while len(self.crossover_list) > 0:
             parent_one = random.choice(self.crossover_list)
 
@@ -437,6 +555,7 @@ class Reproduction(object):
 
             first_mate_list.append(parent_one)
             second_mate_list.append(parent_two)
+
         return first_mate_list, second_mate_list
 
     def crossover(self, genome_one, genome_two, mutation_rate):
@@ -1675,13 +1794,6 @@ class Genetic_Algorithm(object):
             all_values.write(f"{all_value_count},    {sol.name},    ")
             for param in sol.parameters:
 
-                with open("tests.txt","a") as f:
-                    f.write(str(sol.parameters[param]))
-                    try:
-                        f.write(str(sol.parameters[param]['value'])+"\n")
-                    except:
-                        f.write(str(sol)+"\n")
-
                 all_values.write(f"{sol.parameters[param]['value']},    ")
                 #print(f"{sol.parameters[param]['value']},    ")
             all_values.write('\n')
@@ -1703,7 +1815,7 @@ class Genetic_Algorithm(object):
         #self.population.children = pool.map(self.crud.evaluator,self.population.children)
         # save all param before selection perform
         opt.record_all_param(self.population,self.generation, flag=True)
-        self.population = self.selection.perform(self.population)
+        self.population = self.selection.perform(self.population,self.file_settings)
         opt.check_best_worst_average(self.population.parents)
         
         opt.write_track_file(self.population, self.generation)
@@ -1742,7 +1854,7 @@ class Genetic_Algorithm(object):
 
             #self.population.children = pool.map(self.crud.evaluator,self.population.children)
             self.cleanup()
-            self.population = self.selection.perform(self.population)
+            self.population = self.selection.perform(self.population,self.file_settings)
             opt.check_best_worst_average(self.population.parents)
             opt.write_track_file(self.population, self.generation)
             opt.record_optimized_solutions(self.population)
