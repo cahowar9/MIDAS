@@ -32,7 +32,7 @@ class Problem_Preparation_Tools():
                 xs_list['reflectors']['top'].append(param['serial'])
             elif param['refl_type'] == 'radial':
                 xs_list['reflectors']['radial'].append(param['serial'])
-                tag_list['reflectors']['radial'].append((str(10+len(tag_list['reflectors'])),key))
+                tag_list['reflectors'].append((str(10+len(tag_list['reflectors'])),key))
             elif param['refl_type'] == 'bot':
                 xs_list['reflectors']['bot'].append(param['serial'])
         if 'blankets' in input_obj.fa_options:
@@ -163,8 +163,6 @@ class Problem_Preparation_Tools():
                             if core_map[irow,icol]: #skip empty locations
                                 core_dict[core_map[irow,icol]] = dict_value
 
-
-
         else: # find symetric locations for cores with odd number of rows and cols (PWRS)
             ## Link locations across symmetry zones (e.g. quadrants or octants)
             if symmetry == 'quarter':
@@ -265,26 +263,50 @@ class Prepare_Problem_Values():
         core_dict = Problem_Preparation_Tools.generate_core(input_obj, core_shape) #create LP maps that match the length and symmetry of the chromosome.
  
     ## Generate map of core for printing to file
-        if input_obj.map_size == "quarter":
-            size_x = int(np.ceil(input_obj.nrow/2))
-            size_y = int(np.ceil(input_obj.ncol/2))
-            core_lattice = np.zeros((size_y,size_x), dtype='<U8')
-            for y in range(size_y):
-                for x in range(size_x):
-                    val = core_shape[size_y-1+y,size_x-1+x]
-                    if val is None:
-                        val = "00"
-                    core_lattice[y,x] = val
-        else: #assume full map
-            size_x = int(input_obj.nrow)
-            size_y = int(input_obj.ncol)
-            core_lattice = np.zeros((size_y,size_x), dtype='<U8')
-            for y in range(size_y):
-                for x in range(size_x):
-                    val = core_shape[y,x]
-                    if val is None:
-                        val = "00"
-                    core_lattice[y,x] = val
+        if not input_obj.nrow % 2 == 0:
+            if input_obj.map_size == "quarter":
+                size_x = int(np.ceil(input_obj.nrow/2))
+                size_y = int(np.ceil(input_obj.ncol/2))
+                core_lattice = np.zeros((size_y,size_x), dtype='<U8')
+                for y in range(size_y):
+                    for x in range(size_x):
+                        val = core_shape[size_y-1+y,size_x-1+x]
+                        if val is None:
+                            val = "00"
+                        core_lattice[y,x] = val
+
+            else: #assume full map
+                size_x = int(input_obj.nrow)
+                size_y = int(input_obj.ncol)
+                core_lattice = np.zeros((size_y,size_x), dtype='<U8')
+                for y in range(size_y):
+                    for x in range(size_x):
+                        val = core_shape[y,x]
+                        if val is None:
+                            val = "00"
+                        core_lattice[y,x] = val
+        else: 
+            if input_obj.map_size == "quarter":
+                size_x = int(np.ceil(input_obj.nrow/2))
+                size_y = int(np.ceil(input_obj.ncol/2))
+                core_lattice = np.zeros((size_y,size_x), dtype='<U8')
+                for y in range(size_y):
+                    for x in range(size_x):
+                        val = core_shape[size_y+y,size_x+x]
+                        if val is None:
+                            val = "00"
+                        core_lattice[y,x] = val
+
+            else: #assume full map
+                size_x = int(input_obj.nrow)
+                size_y = int(input_obj.ncol)
+                core_lattice = np.zeros((size_y,size_x), dtype='<U8')
+                for y in range(size_y):
+                    for x in range(size_x):
+                        val = core_shape[y,x]
+                        if val is None:
+                            val = "00"
+                        core_lattice[y,x] = val
 
         pincal_loc = np.zeros((core_lattice.shape[0],core_lattice.shape[1]), dtype='<U20')
         for x in range(core_lattice.shape[0]):
