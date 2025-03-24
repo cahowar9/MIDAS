@@ -452,6 +452,15 @@ def with_template(solution, input, cwd, filename):
                         ofile.write("  ")
                     ofile.write("\n")
                 ofile.write("\n")
+            
+            elif 'int_th' in line.lower():
+                if input.th_fdbk['apply']:
+                    if input.th_fdbk['loc'] is None:
+                        ofile.write("      INT_TH     T -1\n")
+                    else: 
+                        ofile.write(f"      INT_TH     T 1 '{cwd.joinpath(cwd / input.th_fdbk['loc'])}'\n")
+                else:
+                    ofile.write("      TH_FDBK    F\n")
 
             else:
                 ofile.write(line) 

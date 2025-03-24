@@ -589,7 +589,7 @@ def validate_input(keyword, value):
                 if new_key =='apply':
                     new_item = item
                     if not isinstance(new_item, bool):
-                        raise ValueError("'apply' flag for input template must be boolean")
+                        raise ValueError("'apply' flag for th_fdbk must be boolean")
                 if new_key == 'loc':
                     if item == None:
                         new_item = item
@@ -599,10 +599,11 @@ def validate_input(keyword, value):
 
             if 'apply' in new_dict.keys() and new_dict['apply']:
                 if 'loc' not in new_dict.keys():
-                    raise ValueError("'apply' in th_fdbk is set to true but path to paths input is not specified. PARCS internal mass/energy balance solver is assumed.") 
+                    logger.warning("'apply' in th_fdbk is set to true but path to paths input is not specified. PARCS internal mass/energy balance solver is assumed.")
+                    new_dict['loc'] = None
             if 'loc' in new_dict.keys() and 'apply' not in new_dict.keys(): 
                 logger.warning("Path to PATHS input is specified but 'apply' flag is not given. MIDAS will assume mass/energy balance solver in calculation")
-                new_dict['apply'] = None
+                new_dict['apply'] = False
             return new_dict
     
     elif keyword == 'pin_power_recon':
@@ -645,8 +646,6 @@ def template_check(self):
     Checks to ensure that necessary flags are present if a template input file is provided for a code interface. 
     The check is purposefully minimal so that users are able to run the code exactly as they wish.
     Ensuring that the template is exactly as intended is up to the user.
-    
-    TODO add template functionality for parcs342
 
     Written by Jake Mikouchi. 3/24/2025
     """
@@ -672,7 +671,25 @@ def template_check(self):
                     necessary_flags['depl'] = True
 
     if self.code_interface.lower() == 'parcs342':
-        raise ValueError(f'input templates are not supported for parcs342')
+        necessary_flags = {'caseid': False, 'cntl': False, 'param': False, 'geom': False, 'fdbk': False, 
+                        'th': False, 'depl':False}
+        with open(self.input_template['loc'], "r") as file:
+            lines = file.readlines()  
+            for line in lines:
+                if "caseid" in line.lower() and "!" not in line.lower():
+                    necessary_flags['caseid'] = True
+                if "cntl" in line.lower() and "!" not in line.lower():
+                    necessary_flags['cntl'] = True
+                if "param" in line.lower() and "!" not in line.lower():
+                    necessary_flags['param'] = True
+                if "geom" in line.lower() and "!" not in line.lower():
+                    necessary_flags['geom'] = True
+                if "fdbk" in line.lower() and "!" not in line.lower():
+                    necessary_flags['fdbk'] = True
+                if "th" in line.lower() and "!" not in line.lower():
+                    necessary_flags['th'] = True
+                if "depl" in line.lower() and "!" not in line.lower():
+                    necessary_flags['depl'] = True
 
     if self.code_interface.lower() == "nuscale_database":
         raise ValueError(f'input templates are not supported for nuscale_database')
