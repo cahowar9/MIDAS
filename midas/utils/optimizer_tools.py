@@ -379,12 +379,12 @@ class Fitness(object):
             if param in ["assembly_burnup"]:
                 pass
             else:
+                pvalue = parameters[param]['value']
                 pgoal = parameters[param]['goal']
                 pweight = parameters[param]['weight']
-                pvalue = parameters[param]['value']
+                
                 if not pvalue:
                     logger.error("No value was provided by MIDAS for the objective parameter '%s'. This is highly irregular.",param)
-                
                 if pgoal == 'maximize':
                     fitness += pvalue*pweight
                 elif pgoal == 'minimize':
@@ -400,6 +400,7 @@ class Fitness(object):
                     ptarget = parameters[param]['target']
                     penalty = (pvalue - ptarget)*pweight if pvalue - ptarget > 0.0 else 0.0
                     fitness -= penalty
+
         return fitness
 
 class Solution_Reporting():

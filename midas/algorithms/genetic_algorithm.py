@@ -554,6 +554,9 @@ class GA_reproduction():
                     child_chromosome.append((new_soln[i],None))
             child_chromosome = optools.Constrain_Input.EQ_reload_fuel(input_obj.genome,LWR_core_parameters,child_chromosome)
 
+        else: 
+            child_chromosome = new_soln
+
         return child_chromosome
 
     def linear_update(initial_rate, final_rate, current_generation, num_generations):

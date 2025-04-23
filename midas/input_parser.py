@@ -56,7 +56,7 @@ def validate_input(keyword, value):
     
     elif keyword == 'optimizer':
         value = str(value).lower().replace(' ','_')
-        if value not in ["genetic_algorithm","bayesian_optimization"]:
+        if value not in ["genetic_algorithm","bayesian_optimization","simulated_annealing"]:
             raise ValueError("Requested methodology '" + value + "' invalid.")
     
     elif keyword == 'code_type':
@@ -79,8 +79,7 @@ def validate_input(keyword, value):
                     if not isinstance(new_item, bool):
                         raise ValueError("'apply' flag for input template must be boolean")
                     if new_item:
-                        logger.warning("MIDAS assumes that the input Template is exact and needs no modification") #TODO sweep over template to ensure everything is correct
-                        logger.warning("Input template functionality currently only supports single cycle functionality") #TODO add other calculation functionality
+                        logger.warning("Input template functionality currently only supports single cycle calculations") #TODO add other calculation functionality
                 if new_key == 'loc':
                     new_item = Path(str(item))
                 new_dict[new_key] = new_item
@@ -168,8 +167,16 @@ def validate_input(keyword, value):
                                    'cycle_length',
                                    'assembly_burnup',
                                    'cycle_cost',
-                                   'av_fuelenrichment']:
+                                   'av_fuelenrichment',
+                                   'keff_min',
+                                   'keff_max',
+                                   'keff_diff',
+                                   'cpr',
+                                   'lhgr',
+                                   'aplhgr']:
                     raise ValueError(f"Requested objective/constraint '{key}' not supported.")
+                if new_key == 'aplhgr':
+                    logger.warning("APLHGR requires 3d plotting of pin reconstruction.")
                 new_item = {}
                 if isinstance(item, dict):
                     #check goals, weights, and targets
@@ -199,6 +206,17 @@ def validate_input(keyword, value):
                                 new_subitem[new_subsubkey] = new_subsubitem
                             else:
                                 raise ValueError(f"Requested settings for objective '{key}' must be nested with its applicable parameters.")
+                        elif new_subkey == 'critical_power':
+                            new_subitem = float(subitem)
+                        elif new_subkey == 'linear_power_density':
+                            new_subitem = float(subitem)
+                        if new_key == 'cpr' and 'critical_power' not in item.keys():
+                            raise ValueError(f"Critical power ratio is requested in objectives but the critical power is not provided.")
+                        if new_key == 'lhgr' and 'linear_power_density' not in item.keys():
+                            raise ValueError(f"Linear heat generation rate requested in objectives but the linear power density is not provided.")
+                        if new_key == 'aplhgr' and 'linear_power_density' not in item.keys():
+                            raise ValueError(f"Average palnar linear heat generation rate requested in objectives but the linear power density is not provided.")
+
                         new_item[new_subkey] = new_subitem #save modified parameter
                     #check parameters logic
                     if 'goal' not in new_item:
@@ -307,6 +325,21 @@ def validate_input(keyword, value):
         value = float(value)
         if value > 1.0 and value.is_integer() == False:
             raise ValueError("'elites' value can either be between 0 and 1 to represent a percentage or an integer equal to or greater than 1 to represent a number of elites")
+    
+    elif keyword == 'temperature':
+        value = float(value)
+        if value < 0.0:
+            raise ValueError("Simulated Annealing intial temperature must be greater than 0")
+
+    elif keyword == 'cooling_schedule':
+        value = str(value).lower().replace(' ','_')
+        if value not in ["exponential_decrease", "linear_update", "log_update"]:
+            raise ValueError(f"Cooling schedule '{value}' not supported.")
+
+    elif keyword == 'perturbation_type':
+        value = str(value).lower().replace(' ','_')
+        if value not in ["perturb_by_gene"]:
+            raise ValueError("perturbation type not supported.")
 
     elif keyword == 'acquisition_function':
         value = str(value).lower().replace(' ','_')
@@ -751,6 +784,8 @@ class Input_Parser():
             info = None
         
         self.population_size = yaml_line_reader(info, 'population_size', 1)
+        if self.methodology == 'simulated_annealing':
+            self.population_size = 1
         self.num_generations = yaml_line_reader(info, 'number_of_generations', 1)
         self.symmetry = yaml_line_reader(info, 'solution_symmetry', 'octant')
         self.objectives = yaml_line_reader(info, 'objectives', None)
@@ -780,6 +815,9 @@ class Input_Parser():
         self.kernel_smoothness = yaml_line_reader(info, 'kernel_smoothness_factor', 0.5)
         self.kernel_hyperparam_conv = yaml_line_reader(info, 'hyperparameter_convergence_criteria', 0.01)
         self.surrogate_fitting_off = yaml_line_reader(info, 'surrogate_off_generation', int(self.num_generations/2))
+        self.initial_temperature = yaml_line_reader(info, 'temperature', 100)
+        self.cooling_schedule = yaml_line_reader(info, 'cooling_schedule', 'exponential_decrease')
+        self.perturbation_type = yaml_line_reader(info, 'perturbation_type', 'perturb_by_gene')
         
     ## Fuel Assembly Block ##
         self.fa_options = yaml_line_reader(self.file_settings, 'assembly_options', None)
@@ -843,12 +881,9 @@ class Input_Parser():
         self.th_fdbk = yaml_line_reader(info, 'th_fdbk', th_default)
         self.pin_power_recon = yaml_line_reader(info, 'pin_power_recon', True)
         self.number_axial = yaml_line_reader(info, 'num_axial_nodes', 19)
-        self.axial_nodes = yaml_line_reader(info, 'axial_nodes', [16.12, "15*25.739", 16.12])
+        self.axial_nodes = yaml_line_reader(info, 'axial_nodes', "16.12, 15*25.739, 16.12")
         self.boc_exposure = yaml_line_reader(info, 'boc_core_exposure', 0.0)
-        self.depl_steps = yaml_line_reader(info, 'depletion_steps', [1, 1, 30, 30, 30, 30, 30, 30])
-
-        with open("info.txt","w") as f:
-            f.write(str(self.th_fdbk))
+        self.depl_steps = yaml_line_reader(info, 'depletion_steps', "1, 1, 30, 30, 30, 30, 30, 30")
         
         #NuScale database verification block
         if self.code_interface == 'nuscale_database':

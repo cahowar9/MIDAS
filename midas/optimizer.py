@@ -11,6 +11,7 @@ import pickle
 
 from midas.algorithms import genetic_algorithm as GA
 from midas.algorithms import bayesian_optimization as BO
+from midas.algorithms import simulated_annealing as SA
 from midas.utils import optimizer_tools as optools
 from midas.codes import parcs342, parcs343
 from midas.utils import LWR_fuelcyclecost
@@ -59,6 +60,8 @@ class Optimizer():
             self.algorithm = GA.Genetic_Algorithm(self.input)
         elif methodology == 'bayesian_optimization':
             self.algorithm = BO.Bayesian_Optimization(self.input)
+        elif methodology == 'simulated_annealing':
+            self.algorithm = SA.Simulated_Annealing(self.input)
         #!TODO: Add the other algorithms back in.
 
         return
@@ -176,7 +179,10 @@ class Optimizer():
                     if param == 'av_fuelenrichment': #reformat this parameter prior to printing
                         soln_result_list.append('{0:.3f}'.format(100*soln.parameters[param]['value'])) #convert w.t. to wo%
                     else:
-                        soln_result_list.append('{0:.3f}'.format(soln.parameters[param]['value']))
+                        try:
+                            soln_result_list.append('{0:.3f}'.format(soln.parameters[param]['value']))
+                        except:
+                            soln_result_list.append(str(soln.parameters[param]['value']))
                 for gene in soln.chromosome:
                     soln_result_list.append(str(gene))
                 ## write to output file
@@ -210,7 +216,10 @@ class Optimizer():
                     if param == 'av_fuelenrichment': #reformat this parameter prior to printing
                         soln_result_list.append('{0:.3f}'.format(100*soln.parameters[param]['value'])) #convert w.t. to wo%
                     else:
-                        soln_result_list.append('{0:.3f}'.format(soln.parameters[param]['value']))
+                        try:
+                            soln_result_list.append('{0:.3f}'.format(soln.parameters[param]['value']))
+                        except:
+                            soln_result_list.append(str(soln.parameters[param]['value']))
                 for gene in soln.chromosome:
                     soln_result_list.append(str(gene))
                 ## write to output file
@@ -228,7 +237,7 @@ class Optimizer():
             logger.debug("Writing restart file %s...",self.input.job_name+".rst")
             with open(self.input.job_name+".rst", "wb") as f: # Open in binary write mode
                 pickle.dump(self, f)
-        
+
     ## Clear solution files to save disk space
             if self.input.clear_results == "all":
                 logger.info("Clearing solution files for Generation 0...")
@@ -272,7 +281,6 @@ class Optimizer():
             self.population.current = []
             for i in range(len(new_chromosome_list)):
                 self.population.current.append(self.generate_solution(f'Gen_{self.generation.current}_Indv_{i}', new_chromosome_list[i]))
-        
         ## Evaluate fitness
             ## If chromosome exists in previous generations, skip call to external model.
             inactive_solutions = []
@@ -305,7 +313,7 @@ class Optimizer():
             ## Recombine active and inactive solutions.
             for soln in inactive_solutions:
                 self.population.current.append(soln)
-        
+
         ## Archive results
             for soln in self.population.current:
                 self.population.archive['solutions'].append(soln.chromosome)
@@ -320,7 +328,10 @@ class Optimizer():
                     if param == 'av_fuelenrichment': #reformat this parameter prior to printing
                         soln_result_list.append('{0:.3f}'.format(100*soln.parameters[param]['value'])) #convert w.t. to wo%
                     else:
-                        soln_result_list.append('{0:.3f}'.format(soln.parameters[param]['value']))
+                        try:
+                            soln_result_list.append('{0:.3f}'.format(soln.parameters[param]['value']))
+                        except:
+                            soln_result_list.append(str(soln.parameters[param]['value']))
                 for gene in soln.chromosome:
                     soln_result_list.append(str(gene))
                 ## write to output file
