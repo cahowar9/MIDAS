@@ -51,7 +51,7 @@ def validate_input(keyword, value):
     elif keyword == 'clear_results':
         value = str(value).lower().replace(' ','_')
         #variations on "none" or "keep" are equivalent; "none" is the preferred variation.
-        if value not in ["all", "all_but_best", "none", "keep", "keep_all"]:
+        if value not in ["all", "all_but_best", "none", "keep", "keep_all", "output_files"]:
             raise ValueError("Clear results request type is invalid or not supported.")
     
     elif keyword == 'methodology':

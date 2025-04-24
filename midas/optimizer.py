@@ -249,6 +249,17 @@ class Optimizer():
                 os.system(f'rm -rf ./{self.input.results_dir_name}/Gen_0_Indv_*')
                 os.system(f'mv ./{self.input.results_dir_name}/safeGen_0_Indv_{best_soln_index} ./{self.input.results_dir_name}/Gen_0_Indv_{best_soln_index}')
                 logger.info("Done!\n")
+            elif self.input.clear_results == "output_files":
+                logger.info(f"Clearing all output files for Generation {self.generation.current}...")
+                for i in range(len(self.population.current)):
+                    try:
+                        os.system(f'mv ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/Gen_{self.generation.current}_Indv_{i}.inp ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/safe.inp ')
+                        os.system(f'rm -rf ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/Gen_{self.generation.current}_Indv_{i}.*')
+                        os.system(f'rm -rf ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/boc_exp.dep')
+                        os.system(f'mv ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/safe.inp  ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/Gen_{self.generation.current}_Indv_{i}.inp')
+                    except: 
+                        continue
+                logger.info("Done!\n")
     
 ## restart previous optimization routine ##
         else:
@@ -358,6 +369,17 @@ class Optimizer():
                 os.system(f'mv ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{best_soln_index} ./{self.input.results_dir_name}/safeGen_{self.generation.current}_Indv_{best_soln_index}')
                 os.system(f'rm -rf ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_*')
                 os.system(f'mv ./{self.input.results_dir_name}/safeGen_{self.generation.current}_Indv_{best_soln_index} ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{best_soln_index}')
+                logger.info("Done!\n")
+            elif self.input.clear_results == "output_files":
+                logger.info(f"Clearing all output files for Generation {self.generation.current}...")
+                for i in range(len(self.population.current)):
+                    try:
+                        os.system(f'mv ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/Gen_{self.generation.current}_Indv_{i}.inp ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/safe.inp ')
+                        os.system(f'rm -rf ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/Gen_{self.generation.current}_Indv_{i}.*')
+                        os.system(f'rm -rf ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/boc_exp.dep')
+                        os.system(f'mv ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/safe.inp  ./{self.input.results_dir_name}/Gen_{self.generation.current}_Indv_{i}/Gen_{self.generation.current}_Indv_{i}.inp')
+                    except: 
+                        continue
                 logger.info("Done!\n")
         
             terminate = self.termination_criteria.TC_methods(self.population.current, self.input.termination_criteria)
