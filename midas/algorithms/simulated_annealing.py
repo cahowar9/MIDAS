@@ -40,7 +40,6 @@ class Simulated_Annealing():
         
         Updated by Jake Mikouchi. 04/21/2025
         """
-
     ## Container for holding new list of child chromosomes
         primary_individual = [SA_reproduction.selection(self.temperature, pop_list).chromosome]
         individual_pairs = deepcopy(primary_individual)
@@ -54,7 +53,9 @@ class Simulated_Annealing():
 
         self.temperature = SA_reproduction.Temperature_update_methods(self, self.temperature, self.input.cooling_schedule)
         self.generation += 1
+
         return individual_pairs
+
 
 class SA_reproduction():
     """

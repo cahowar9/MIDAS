@@ -80,9 +80,6 @@ def evaluate(solution, input):
     ## Run PARCS INPUT DECK #
     parcscmd = __parcs343exe__
 
-    with open("info.txt","a") as f:
-        f.write(f"{indv_dir}"+"\n")
-        f.write(f"{solution.parameters}")
     try:
         output = subprocess.check_output([parcscmd, filename], stderr=STDOUT, timeout=input.code_walltime) #wait until calculation finishes
     ## Get Results
@@ -615,9 +612,6 @@ def calc_cpr(filename, parameters):
     
     # single highest assembly power throughout cycle
     max_ap = max(peak_assembly_power) 
-
-    with open("info.txt","w") as f:
-        f.write(str(max_ap))
 
     #determines critical power ratio
     try: 

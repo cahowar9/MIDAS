@@ -294,7 +294,6 @@ class Optimizer():
                     logger.debug(f"Fitness value for solution '{soln.name}' will be taken from archive entry: {soln_index}.")
                 except ValueError:
                     continue #chromosome is unique, do nothing.
-            
             logger.info("Calculating fitness for generation %s...", self.generation.current)
             ## Execute and parse objective/constraint values
             self.population.current = pool.starmap(self.eval_func, zip(self.population.current, repeat(self.input)))

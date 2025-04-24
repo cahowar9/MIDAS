@@ -54,7 +54,7 @@ def validate_input(keyword, value):
         if value not in ["all", "all_but_best", "none", "keep", "keep_all"]:
             raise ValueError("Clear results request type is invalid or not supported.")
     
-    elif keyword == 'optimizer':
+    elif keyword == 'methodology':
         value = str(value).lower().replace(' ','_')
         if value not in ["genetic_algorithm","bayesian_optimization","simulated_annealing"]:
             raise ValueError("Requested methodology '" + value + "' invalid.")
@@ -767,7 +767,7 @@ class Input_Parser():
         self.results_dir_name = yaml_line_reader(info, 'results_directory_name', 'output_files')
         self.set_seed = yaml_line_reader(info, 'set_seed', None)
         self.clear_results = yaml_line_reader(info, 'clear_results', 'all_but_best')
-        self.methodology = yaml_line_reader(info, 'optimizer', 'genetic_algorithm')
+        self.methodology = yaml_line_reader(info, 'methodology', 'genetic_algorithm')
         self.code_interface = yaml_line_reader(info, 'code_type', 'PARCS342')
         template_default = {'apply':False,'loc':''}
         self.input_template = yaml_line_reader(info, 'input_template', template_default)
