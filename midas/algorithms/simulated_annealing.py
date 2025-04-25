@@ -75,11 +75,14 @@ class SA_reproduction():
         
         Created by Jake Mikouchi. 04/22/2025
         """
-        primary = pop_list[0]
+
+        # optimizer.py does some weird shifting due to inactive solutions
+        # so challenger is index 0 while primary is index 1
+        challenger = pop_list[0]
         if len(pop_list) < 2:
-            challenger = pop_list[0]
+            primary = pop_list[0]
         else:
-            challenger = pop_list[1]
+            primary = pop_list[1]
 
         selected = pop_list[0]
 
@@ -92,7 +95,7 @@ class SA_reproduction():
                 selected = challenger
             else: 
                 selected = primary
-        
+
         return selected
 
     def Temperature_update_methods(self, temperature, cooling_schedule):
