@@ -128,7 +128,12 @@ def validate_input(keyword, value):
         except AttributeError:
                 value = int(value)
     
-    
+    elif keyword == 'buffer_size':
+        if not isinstance(value, int):
+            raise ValueError("bufer size must be an integer") 
+        elif isinstance(value, int) and value < 1:
+            raise ValueError("buffer size must be greater than 1") 
+
     elif keyword == 'solution_symmetry':
         value = str(value).lower().replace(' ','_')
         if value not in ['octant','quarter','full']:
@@ -333,8 +338,25 @@ def validate_input(keyword, value):
 
     elif keyword == 'cooling_schedule':
         value = str(value).lower().replace(' ','_')
-        if value not in ["exponential_decrease", "linear_update", "log_update"]:
+        if value not in ["exponential_decrease", "linear_update", "log_update", "lam"]:
             raise ValueError(f"Cooling schedule '{value}' not supported.")
+        if value == "lam":
+            logger.warning(f"Cooling schedule '{value}' only available for parallel simulated annealing.")
+    
+    elif keyword == 'secondary_cooling_schedule':
+        value = str(value).lower().replace(' ','_')
+        if value not in ["exponential_decrease", "linear_update", "log_update", "none"]:
+            raise ValueError(f"Secondary cooling schedule '{value}' not supported.")
+
+    elif keyword == 'quality_factor':
+        value = float(value)
+        if value < 1.0 or value > 2.0:
+            raise ValueError("quality factor for LAM cooling schedule must be 2.0 > qf > 1.0")
+    
+    elif keyword == 'scaling_factor':
+        value = float(value)
+        if value < 1.0 or value > 2.0:
+            raise ValueError("scaling factor for LAM cooling schedule must be 2.0 > qf > 1.0")
 
     elif keyword == 'perturbation_type':
         value = str(value).lower().replace(' ','_')
@@ -784,13 +806,14 @@ class Input_Parser():
             info = None
         
         self.population_size = yaml_line_reader(info, 'population_size', 1)
-        if self.methodology == 'simulated_annealing':
+        if self.methodology == 'simulated_annealing' and self.num_procs <= 1:
             self.population_size = 1
         self.num_generations = yaml_line_reader(info, 'number_of_generations', 1)
         self.symmetry = yaml_line_reader(info, 'solution_symmetry', 'octant')
         self.objectives = yaml_line_reader(info, 'objectives', None)
         termination_criteria_default = {'method':'None','termination_generations':0}
         self.termination_criteria = yaml_line_reader(info, 'termination_criteria', termination_criteria_default)
+        self.buffer_size = yaml_line_reader(info, 'buffer_size', 10)
         
     ## Algorithm Block ##
         try:
@@ -816,7 +839,13 @@ class Input_Parser():
         self.kernel_hyperparam_conv = yaml_line_reader(info, 'hyperparameter_convergence_criteria', 0.01)
         self.surrogate_fitting_off = yaml_line_reader(info, 'surrogate_off_generation', int(self.num_generations/2))
         self.initial_temperature = yaml_line_reader(info, 'temperature', 100)
-        self.cooling_schedule = yaml_line_reader(info, 'cooling_schedule', 'exponential_decrease')
+        if self.num_procs > 1:
+            self.cooling_schedule = yaml_line_reader(info, 'cooling_schedule', 'exponential_decrease')
+        if self.num_procs <= 1:
+            self.cooling_schedule = yaml_line_reader(info, 'cooling_schedule', 'lam')
+        self.secondary_cooling_schedule = yaml_line_reader(info, 'secondary_cooling_schedule', 'exponential_decrease')
+        self.quality_factor = yaml_line_reader(info, 'quality_factor', 1.1)
+        self.scaling_factor = yaml_line_reader(info, 'scaling_factor', 1.5)
         self.perturbation_type = yaml_line_reader(info, 'perturbation_type', 'perturb_by_gene')
         
     ## Fuel Assembly Block ##
