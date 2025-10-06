@@ -177,7 +177,24 @@ if __name__ == "__main__":
     
     else: # perform restart
         exitcode = restart(args)
+    import psutil
+    import os
 
+# This should be at the very end of your script
+    def list_alive_children():
+        parent = psutil.Process(os.getpid())  # get current Python process
+        children = parent.children(recursive=True)  # get all descendants
+        if not children:
+            print("No child processes are running.")
+        else:
+            print(f"{len(children)} child process(es) still running:")
+            for child in children:
+                try:
+                    print(f"PID {child.pid}, name={child.name()}, cmdline={child.cmdline()}")
+                except psutil.NoSuchProcess:
+                    pass  # process disappeared between listing and access
+
+   # list_alive_children()
     
     #Clean up code
     logger.info("MIDAS execution completed.")

@@ -16,34 +16,50 @@ MIDAS Version 0.2.3
 
 ====================================================================================================
 
-ERROR: An error in the MIDAS execution has occurred with the following message: 
+WARNING: Input template functionality currently only supports single cycle calculations
+WARNING: Cooling schedule 'lam' only available for parallel simulated annealing.
+Parsed input file: ./serpent.yaml
+Set global RNG Seed: 7901994033838489510
+Completed Optimizer assembly.
+Begin Optimization...
 
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Traceback (most recent call last):
-  File "C:\Users\cahowar9\Documents\MIDAS\midas\utils\decorators.py", line 19, in wrapper
-    exitcode = func(*args, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\cahowar9\Documents\MIDAS\midas\utils\decorators.py", line 34, in wrapper
-    result = func(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\cahowar9\Documents\MIDAS\midas\utils\decorators.py", line 47, in wrapper
-    result = func(*args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\cahowar9\Documents\MIDAS\midasmain.py", line 119, in main
-    inp_lines = Input_Parser(args.cpus, args.input)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\cahowar9\Documents\MIDAS\midas\input_parser.py", line 1056, in __init__
-    self.parse_input_data()
-  File "C:\Users\cahowar9\Documents\MIDAS\midas\input_parser.py", line 1271, in parse_input_data
-    if self.code_interface == 'nuscale_database':
-       ^^^^
-  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\bdb.py", line 100, in trace_dispatch
-    return self.dispatch_line(frame)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\bdb.py", line 125, in dispatch_line
-    if self.quitting: raise BdbQuit
-                      ^^^^^^^^^^^^^
-bdb.BdbQuit
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Generating initial population of 1 individuals...
+Calculating fitness for generation 0...
+Done!
+Generation 0 Best Individual:
+Generation, Individual, Fitness Value, fdeltah, cycle_length, cost_fuelcycle, total_mass, doppler_temperature_coefficient, Chromosome
+0,0,-3685515873015872857009868967166083072.000,1.050,0.544,44336678.059,3685515873015872857009868967166083072.000,-7.519,1.5254445115032773,2.05,1.6467303194394147,22.96240926159728
 
+Clearing all but best solution files for Generation 0...
+Done!
+
+Creating population of 1 individuals for generation 1...
+Calculating fitness for generation 1...
+Done!
+Generation 1 Best Individual:
+Generation, Individual, Fitness Value, fdeltah, cycle_length, cost_fuelcycle, total_mass, doppler_temperature_coefficient, Chromosome
+1,0,-3685515873015872857009868967166083072.000,1.048,0.621,42580593.369,3685515873015872857009868967166083072.000,-6.499,1.7112889173674546,2.75,1.5754298586808755,23.450864991075306
+
+Clearing all but best solution files for Generation 1...
+Done!
+
+Best solution found in optimization: 
+
+Generation: 0
+Individual: 0
+Fitness Value: -3.685515873015873e+36
+fdeltah: 1.05
+cycle_length: 0.544
+cost_fuelcycle: 44336678.059
+total_mass: 3.685515873015873e+36
+doppler_temperature_coefficient: -7.519
+Chromosome: ['1.5254445115032773', '2.05', '1.6467303194394147', '22.96240926159728']
+
+Statistics for last generation: 
+
+Average_Fitness: -3.685515873015873e+36
+Max_Fitness: -3.685515873015873e+36
+Std_Fitness: 0.0
+
+Optimization completed.
 MIDAS execution completed.
