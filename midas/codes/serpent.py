@@ -103,14 +103,18 @@ def evaluate(solution, input):
     base_exit_code = base_process.returncode
     if base_exit_code == 0:
         base_results = get_serpent_results(base_dir / "base_input_res.m")
-        if 'max_doserate' in input.objectives:
+        if 'max_doserate' in input.objectives or type(input.power_peaking_detectors) == list:
             base_det_results = get_serpent_results(base_dir / "base_input_det0.m")
         if input.power_peaking_detectors == 'ppw':
             peaking_results = base_results["PPW_POW"].flatten()[0::2]
-
+            peaking_results = peaking_results[peaking_results != 0]
         else:
             peaking_results = [] #!TODO: Add parsing logic for going through detector results 
-        peaking_results = peaking_results[peaking_results != 0]
+            for det in input.power_peaking_detectors: 
+                det_key = f"DET{det}"
+                if det_key in base_det_results:
+                    peaking_results.append(max(base_det_results[det_key][-2,:]))
+        
         mean_pow = np.mean(peaking_results)
         peaking_factors = peaking_results / mean_pow
 
@@ -210,6 +214,15 @@ def fill_template(template_path, output_path, template_dict):
     # Save to output
     Path(output_path).write_text(filled_text)
 
+def load_matlab_h5py(path):
+    data = {}
+    with h5py.File(path, 'r') as f:
+        def recurse(name, obj):
+            if isinstance(obj, h5py.Dataset):
+                data[name]=obj[()]
+        f.visititems(recurse)
+    return data
+
 def get_serpent_results(output_file):
 
     wait_for_file(output_file)
@@ -224,19 +237,7 @@ def get_serpent_results(output_file):
         print(f"Matlab stderr: {p.stderr}")
         raise ValueError("Matlab did not run right")
 
-    def load_matlab_h5py(path):
-        data = {}
-        with h5py.File(path, 'r') as f:
-            def recurse(name, obj):
-                if isinstance(obj, h5py.Dataset):
-                    data[name]=obj[()]
-            f.visititems(recurse)
-        return data
-
     data = load_matlab_h5py(f'{output_file}.mat')
-
-    if p.poll():
-        p.kill()
 
     return data
 
