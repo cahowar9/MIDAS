@@ -109,7 +109,7 @@ def evaluate(solution, input):
             peaking_results = base_results["PPW_POW"].flatten()[0::2]
             peaking_results = peaking_results[peaking_results != 0]
         else:
-            peaking_results = [] #!TODO: Add parsing logic for going through detector results 
+            peaking_results = []
             for det in input.power_peaking_detectors: 
                 det_key = f"DET{det}"
                 if det_key in base_det_results:

@@ -4,8 +4,8 @@ import logging
 from pathlib import Path
 from shutil import rmtree
 from copy import deepcopy
-import multiprocessing as mp
 from multiprocessing import Pool
+import multiprocessing as mp
 from itertools import repeat
 import csv
 import pickle
@@ -23,6 +23,7 @@ from midas.codes import nuscale_lut
 from midas.codes import trace50p5
 from midas.codes import polaris624
 from midas.codes import serpent
+
 
 
 ## Classes ##
@@ -48,7 +49,7 @@ class Optimizer():
         BO added by Cole Howard. 10/21/2024
         """
         methodology = self.input.methodology
-        if self.input.calculation_type not in ['continuous_variable']: 
+        if self.input.calculation_type not in ['continuous_variable']:
             num_gene_combos = self.calculate_number_gene_combinations(self.input.genome)
         else:
             #!TODO: May need to implement a method of calculating this for continuous variables
@@ -151,10 +152,8 @@ class Optimizer():
                 os.remove("optimizer_results.csv")
             
     ## Initialize beginning population
-            self.population.current = []
-            for i in range(self.population.size):
-                self.population.current.append(self.generate_solution(f'Gen_0_Indv_{i}'))
             mp.set_start_method("spawn",force=True)
+            self.population.current = []
             if self.input.methodology == 'simulated_annealing' and self.input.num_procs > 1:
                 # for parallel simulated annealing the initial population is the size of the buffer
                 logger.info("Generating initial population of %s individuals...", self.input.buffer_size)
@@ -170,10 +169,10 @@ class Optimizer():
             logger.info("Calculating fitness for generation %s...", self.generation.current)
             ## Execute and parse objective/constraint values
             self.population.current = pool.starmap(self.eval_func, zip(self.population.current, repeat(self.input)))
-            if 'cost_fuelcycle' in self.input.objectives.keys() and self.input.code_interface not in ['serpent','function']:
+            if 'cost_fuelcycle' in self.input.objectives.keys():
                 for soln in self.population.current:
                     soln.parameters = LWR_fuelcyclecost.get_fuelcycle_cost(soln, self.input)
-            if 'av_fuelenrichment' in self.input.objectives.keys() and self.input.code_interface not in ['serpent','function']:
+            if 'av_fuelenrichment' in self.input.objectives.keys():
                 for soln in self.population.current:
                     soln.parameters = LWR_averageenrichment.get_avfuelenrichment(soln, self.input)
             ## Calculate fitness from objective/constriant values
@@ -296,10 +295,10 @@ class Optimizer():
                 logger.info("Calculating fitness for generation %s...", self.generation.current)
                 ## Execute and parse objective/constraint values
                 self.population.current = pool.starmap(self.eval_func, zip(self.population.current, repeat(self.input)))
-                if 'cost_fuelcycle' in self.input.objectives.keys() and self.input.code_interface not in ['serpent','function']:
+                if 'cost_fuelcycle' in self.input.objectives.keys():
                     for soln in self.population.current:
                         soln.parameters = LWR_fuelcyclecost.get_fuelcycle_cost(soln, self.input)
-                if 'av_fuelenrichment' in self.input.objectives.keys() and self.input.code_interface not in ['serpent','function']:
+                if 'av_fuelenrichment' in self.input.objectives.keys():
                     for soln in self.population.current:
                         soln.parameters = LWR_averageenrichment.get_avfuelenrichment(soln, self.input)
                 
@@ -393,4 +392,3 @@ class Optimizer():
             optimization_information.plot_optimization_convergence()
     
         return
-    
