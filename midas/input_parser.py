@@ -64,8 +64,8 @@ def validate_input(keyword, value):
     
     elif keyword == 'code_type':
         value = str(value).lower().replace(' ','_')
-        if value not in ["parcs342", "parcs343", "ipwr_database", "ipwr_database_legacy", "trace50p5", "polaris624","serpent","custom_function","styblinski_tang","listsum"]:
-            raise ValueError("Code types currently supported: PARCS342, PARCS343, ipwr_database, TRACE50p5.")
+        if value not in ["parcs342", "parcs343", "ipwr_database", "ipwr_database_legacy", "trace50p5", "polaris624","serpent2","custom_function","styblinski_tang","listsum"]:
+            raise ValueError("Code types currently supported: PARCS342, PARCS343, ipwr_database, Serpent2,TRACE50p5.")
     
     elif keyword == 'calc_type':
         value = str(value).lower().replace(' ','_')
@@ -181,6 +181,8 @@ def validate_input(keyword, value):
                                    'maxgapq',
                                    'peak_reactivity',
                                    'max_critical_exposure',
+                                   'keff',
+                                   'keff_shutdown',
                                    'keff_min',
                                    'keff_max',
                                    'keff_diff',
@@ -836,8 +838,14 @@ def validate_input(keyword, value):
         if value not in ['full','quarter']:
             raise ValueError("Requested core symmetry (used for printing) not valid.")
     
-    elif keyword == 'xs_library_path':
-        value = Path('../../') / Path(str(value))
+    elif keyword in ['xs_library_path','decay_library_path','fission_yield_library_path']:
+        #Create relative filepath
+        value_rel = Path('../../') / Path(str(value))
+        #Check if relative path exists, then use absolute if not
+        if value_rel.exists():
+            value = value_rel
+        else:
+            value = Path(str(value))
     
     elif keyword == 'xs_extension':
         value = str(value).split('.')[-1] #this supports both e.g. ".exe" and "exe".
@@ -1032,6 +1040,74 @@ def validate_input(keyword, value):
     
     elif keyword=='depletion_steps':
         value = [float(x) for x in re.split(r'[, ]',str(value).strip('[]')) if x]
+
+    elif keyword == 'active_cycles':
+        value = int(value)
+    
+    elif keyword == 'inactive_cycles':
+        value = int(value)
+
+    elif keyword == 'shutdown_template':
+        value = Path(str(value))
+    
+    elif keyword == 'particles_per_cycle':
+        value = int(value)
+    
+    elif keyword == 'omp_threads':
+        value = int(value)
+
+    elif keyword == 'depletion_settings':
+        if isinstance(value, dict):
+            new_dict = {}
+            for key, item in value.items():
+                new_key = str(key).lower()
+                if new_key =='apply':
+                    new_item = item
+                    if not isinstance(new_item, bool):
+                        raise ValueError("'apply' flag for input template must be true or false")
+                elif new_key == 'depletion_steps':
+                    try:
+                        new_item = [float(x) for x in new_item]
+                    except:
+                        raise ValueError("'depletion_steps' in depletion data must be a list of numbers")
+                elif new_key == 'depletion_units':
+                    new_item = str(item).lower()
+                    if new_item not in ['days','mwd_kgu']:
+                        raise ValueError("'depletion_units' in depletion data must be 'days' or 'mwd_kgu'")
+                elif new_key == 'mpi_ranks':
+                    new_item = int(item)
+                elif new_key == 'omp_threads':
+                    new_item = int(item)
+                elif new_key == 'particles_per_cycle':
+                    new_item = int(item)
+                elif new_key == 'active_cycles':
+                    new_item = int(item)
+                elif new_key == 'inactive_cycles':
+                    new_item = int(item)
+                else:
+                    raise ValueError(f"Unrecognized key '{new_key}' in depletion data. Currently supported keys include 'apply', 'depletion_steps', 'depletion_units', 'mpi_ranks', 'omp_threads', 'particles_per_cycle', 'active_cycles', and 'inactive_cycles'.")
+                new_dict[new_key] = new_item
+
+            for k in ['omp_threads','particles_per_cycle','active_cycles','inactive_cycles','depletion_steps','depletion_units']:
+                if k not in new_dict.keys() and new_dict['apply']:
+                    raise ValueError(f"'{k}' must be specified in depletion data if 'apply' is true.")
+            return new_dict
+
+    elif keyword == 'mass_materials':
+        if isinstance(value,list):
+            for val in value:
+                val = str(val)
+        elif str(value).replace(" ","").lower() == 'all':
+            value == str(value)
+        else:
+            raise ValueError(f"'mass_materials' takes a list of strings containing material names in serpent file, or 'all' to denote all materials, but got {value} instead.")
+
+    elif keyword == 'power_peaking_detectors':
+        if isinstance(value,list):
+            for val in value:
+                val = str(val)
+        else:
+            raise ValueError(f"'power_peaking_detectors' only takes a list of detector names as input but got {value} of type {type(value)} instead. Check detector names.")
     
     return value
 
@@ -1254,7 +1330,7 @@ class Input_Parser():
                     info = self.file_settings['parcs_data']
                 elif self.code_interface in ["ipwr_database", 'ipwr_database_legacy']:
                     info = self.file_settings['ipwr_data']
-                elif self.code_interface == "serpent":
+                elif self.code_interface == "serpent2":
                     info = self.file_settings['serpent_data']
                 elif self.code_interface == "trace50p5": #multiphysics calcs must first be initialized in neutronics code.
                     try:
@@ -1280,6 +1356,14 @@ class Input_Parser():
         self.assembly_pitch = yaml_line_reader(infomap, 'assembly_pitch', 21.50)
         self.map_size = yaml_line_reader(infomap, 'core_symmetry', 'full')
         self.xs_lib = yaml_line_reader(info, 'xs_library_path', './') #!TODO: interpret this path relative to the MIDAS job base dir, not opt indv base dir.
+        self.dec_lib = yaml_line_reader(info, 'decay_library_path', None)
+        self.nfy_lib = yaml_line_reader(info, 'fission_yield_library_path', None)
+        self.mass_materials = yaml_line_reader(info, 'mass_materials','all')
+        self.power_peaking_detectors = yaml_line_reader(info, 'power_peaking_detectors', None)
+        self.omp_threads = yaml_line_reader(info, 'omp_threads', 1)
+        dep_default = {'apply':False, 'depletion_steps':None,'depletion_units':None,'omp_threads':None,'particles_per_cycle':None,'active_cycles':None,'inactive_cycles':None}
+        self.depletion_settings = yaml_line_reader(info, 'depletion_settings', dep_default)
+        self.shutdown_template = yaml_line_reader(info, 'shutdown_template', None)
         self.xs_extension = yaml_line_reader(info, 'xs_extension', '')
         self.power = yaml_line_reader(info, 'power', 3800.0)
         self.flow = yaml_line_reader(info, 'flow', 18231.89)
@@ -1303,7 +1387,7 @@ class Input_Parser():
             
         self.active_cycles = yaml_line_reader(info, "active_cycles", 500)
         self.inactive_cycles = yaml_line_reader(info, "inactive_cycles", 50)
-        self.particles_per_history = yaml_line_reader(info, "particles_per_history", 5000)
+        self.particles_per_cycle = yaml_line_reader(info, "particles_per_cycle", 5000)
         
         # TRACE input block
         if self.code_interface == "trace50p5":
