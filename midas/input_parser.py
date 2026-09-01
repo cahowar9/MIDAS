@@ -1069,7 +1069,7 @@ def validate_input(keyword, value):
                         raise ValueError("'apply' flag for input template must be true or false")
                 elif new_key == 'depletion_steps':
                     try:
-                        new_item = [float(x) for x in new_item]
+                        new_item = [float(x) for x in item]
                     except:
                         raise ValueError("'depletion_steps' in depletion data must be a list of numbers")
                 elif new_key == 'depletion_units':
