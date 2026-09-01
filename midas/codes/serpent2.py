@@ -82,7 +82,7 @@ def evaluate(solution, input):
     if input.depletion_settings['apply']:
         fill_template(input.input_template["loc"], depletion_file, template_dict)
         with open(depletion_file, "a") as f:
-            f.write(f"\nset pop {input.depletion_settings['particles_per_history']} {input.depletion_settings['active_cycles']} {input.depletion_settings['inactive_cycles']}\n")
+            f.write(f"\nset pop {input.depletion_settings['particles_per_cycle']} {input.depletion_settings['active_cycles']} {input.depletion_settings['inactive_cycles']}\n")
             if input.depletion_settings['depletion_units'].lower() == 'days':
                 f.write("\ndep daytot\n")
             else:
@@ -98,7 +98,7 @@ def evaluate(solution, input):
         if file.exists():
             with open(file, "a") as f:
                 if file != depletion_file:
-                    f.write(f"\nset pop {input.particles_per_history} {input.active_cycles} {input.inactive_cycles}\n")
+                    f.write(f"\nset pop {input.particles_per_cycle} {input.active_cycles} {input.inactive_cycles}\n")
                 f.write(f'set acelib "{input.xs_lib}"\n')
                 f.write(f'set declib "{input.dec_lib}"\n')
                 f.write(f'set nfylib "{input.nfy_lib}"\n')
