@@ -1049,6 +1049,8 @@ def validate_input(keyword, value):
 
     elif keyword == 'shutdown_template':
         value = Path(str(value))
+        if not value.exists():
+            raise ValueError(f"Could not locate shutdown template file: '{value}'.")
     
     elif keyword == 'particles_per_cycle':
         value = int(value)
