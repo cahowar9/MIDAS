@@ -8,7 +8,6 @@ import csv
 import matplotlib.pyplot as plt
 import os
 from midas.utils.problem_preparation import LWR_Core_Shapes
-import midas_data
 """
 These are generic optimizer classes that are shared by all algorithms. #!TODO: can this be solved with the super().__init__ method?
 """
@@ -98,6 +97,8 @@ class Solution():
             return self.EQ_chromosome(genome, batches, LWR_core_parameters)
         elif calc_type == 'lattice_physics':
             return self.lat_chromosome(genome,LWR_core_parameters)
+        elif calc_type == 'continuous_variable':
+            return self.continuous_chromosome(genome)
         else:
             raise ValueError("Calculation Type not recognized; potential solution not generated.")
     
@@ -107,34 +108,23 @@ class Solution():
         for gene in genes_list:
             chromosome_length.append(len(genome[gene]['map']))
         
-
-        chromosome_is_valid = False
-        attempts = 0
-        while not chromosome_is_valid:
-            chromosome = []
-            for i in range(max(chromosome_length)):
-                    gene_options = Gene_Validity_check.contraceptive_check(self.input, genes_list, genome, LWR_core_parameters,
-                                                                                            [], chromosome, i)
-                    if gene_options:
-                        invalid = True
-                        antihang = 0
-                        while invalid:
-                            antihang +=1
-                            if antihang > 1000:
-                                raise ValueError("Random solution generation failed after 1000 attempts. Check the variables maps and constraints.")
-                            gene = random.choice(gene_options)
-                            if genome[gene]['map'][i]: #check that the selected gene option is viable at this location.
-                                chromosome.append(gene)
-                                invalid = False
-                            else:
-                                gene_options.remove(gene)
-
-            if len(chromosome) >= max(chromosome_length):    
-                chromosome_is_valid = True
-            attempts += 1
-            if attempts > 10000:
-                raise ValueError("Random chromosome generation has failed after 10,000 attempts. Is the input space over-constrained?")
-            
+        chromosome = []
+        for i in range(max(chromosome_length)):
+                gene_options = Gene_Validity_check.contraceptive_check(self.input, genes_list, genome, LWR_core_parameters,
+                                                                                        [], chromosome, i)
+                invalid = True
+                antihang = 0
+                while invalid:
+                    antihang +=1
+                    if antihang > 1000:
+                        raise ValueError("Random solution generation failed after 1000 attempts. Check the variables maps and constraints.")
+                    gene = random.choice(gene_options)
+                    if genome[gene]['map'][i]: #check that the selected gene option is viable at this location.
+                        chromosome.append(gene)
+                        invalid = False
+                    else:
+                        gene_options.remove(gene)
+        
         return chromosome
     
     def EQ_chromosome(self,genome,batches,LWR_core_parameters):
@@ -164,19 +154,18 @@ class Solution():
             for i in chromosome_randindex:
                 batch_options = Gene_Validity_check.contraceptive_check(self.input, batches_list, batches, LWR_core_parameters,
                                                                                         [], zone_chromosome, i)
-                if not batch_options:
-                    break
-
                 valid = False
                 while not valid:
-                    batch = random.choice(batch_options)
+                    try:
+                        batch = random.choice(batch_options)
+                    except IndexError:
+                        raise IndexError("Random chromosome generation has no valid solution. Is the input space over-constrained?")
                     if batches[batch]['map'][i]: #check that the selected gene option is viable at this location.
                         zone_chromosome[i] = batch
                         valid = True
                     else:
                         batch_options.remove(batch)
-            if None not in zone_chromosome:
-                chromosome_is_valid = Gene_Validity_check.abortive_check(self.input,batches_list, batches, LWR_core_parameters, zone_chromosome)
+            chromosome_is_valid = Gene_Validity_check.abortive_check(self.input,batches_list, batches, LWR_core_parameters, zone_chromosome)
             attempts += 1
             if attempts > 10000:
                 raise ValueError("Random chromosome generation has failed after 10,000 attempts. Is the input space over-constrained?")
@@ -244,6 +233,22 @@ class Solution():
                 chromosome_is_valid = True
         
         return chromosome
+    
+    def continuous_chromosome(self,genome):
+        """
+        Generates an initial solution for a continuous variable optimization.
+
+        Written by Cole Howard. 9/20/2025
+        """
+        chromosome = []
+        for key, value in sorted(genome.items(), key=lambda item: item[1]['index']):
+            if "normalized_continuous_range" in value:
+                chromosome.append(random.uniform(0.0, 1.0))
+            elif "normalized_discrete_range" in value:
+                chromosome.append(random.choice(value["normalized_discrete_range"]))
+            self.chromosome.append(value)
+
+        return chromosome
 
     def SS_decoder(chromosome):
         """
@@ -277,7 +282,6 @@ class Solution():
                 gene_options_dict is decided differently.
         
         Written by Nicholas Rollins. 10/15/2024
-        Updated by Jake Mikouchi. 1/19/2026
         """
         ## Extract zones map
         zone_chromosome = [loc[0] for loc in chromosome]
@@ -308,82 +312,32 @@ class Solution():
                     gene_options_dict[batch_num].remove(chromosome[i][1])
                 except ValueError: #previous selection at this location made invalid by mutation.
                     chromosome[i] = (chromosome[i][0],None)
-        if 'octant' not in LWR_core_parameters:
-            ## Randomly load fuel into empty locations in shuffling scheme.
-            for i in range(len(zone_chromosome)):
-                batch_num = int(zone_chromosome[i].replace(' ','_').split('_')[-1])
-                
-                if not chromosome[i][1]: #location is missing a FA
-                ## choose valid loading option before continuing.
-                    if not gene_options_dict[batch_num]:
-                        raise ValueError(f"Failed to reload fuel; no source locations available for unassigned location of batch {batch_num}.\n{chromosome}") #!TODO: remove chromosome printout?
-                    valid = False
-                    attempt = 0
-                    while not valid:
-                        attempt += 1
-                        gene = random.choice(gene_options_dict[batch_num])
-                        if batch_num == 0:
-                            #!if genome[gene]['map'][i]: #check that the selected gene option is viable at this location. this requires decoding.
-                            valid = True
-                        #there must be enough symmetrical locs in the source to fill the symmetric locs in the target.
-                        elif multdict[i] <= multdict[gene]:
-                            valid = True
-                        if attempt > 1000:
-                            raise ValueError(f"Failed to reload fuel in shuffling scheme after 1,000 attempts for unassigned location of batch {batch_num}.\n{chromosome}") #!TODO: remove chromosome printout?
-                        
-                    chromosome[i] = (chromosome[i][0],gene)
-                    if batch_num != 0:
-                        gene_options_dict[batch_num].remove(gene)
-        elif 'octant' in LWR_core_parameters and num_rows % 2 == 0: 
-            ## BWR octant core symmetry for equilibrium cycle
-            ## will force fresh fuel in diagonal to compensate for impossible solutions
-
-            ## Randomly load fuel into empty locations in shuffling scheme.
-            for i in range(len(zone_chromosome)):
-                fresh_replacement = None
-                batch_num = int(zone_chromosome[i].replace(' ','_').split('_')[-1])
-                
-                if not chromosome[i][1]: #location is missing a FA
-                ## choose valid loading option before continuing.
-                    valid = False
-                    if not gene_options_dict[batch_num]:
-                        fresh_replacement = ( zone_chromosome[0][:-1] +'0',  random.choice(gene_options_dict[0]))
+        
+        ## Randomly load fuel into empty locations in shuffling scheme.
+        for i in range(len(zone_chromosome)):
+            batch_num = int(zone_chromosome[i].replace(' ','_').split('_')[-1])
+            
+            if not chromosome[i][1]: #location is missing a FA
+            ## choose valid loading option before continuing.
+                if not gene_options_dict[batch_num]:
+                    raise ValueError(f"Failed to reload fuel; no source locations available for unassigned location of batch {batch_num}.\n{chromosome}") #!TODO: remove chromosome printout?
+                valid = False
+                attempt = 0
+                while not valid:
+                    attempt += 1
+                    gene = random.choice(gene_options_dict[batch_num])
+                    if batch_num == 0:
+                        #!if genome[gene]['map'][i]: #check that the selected gene option is viable at this location. this requires decoding.
                         valid = True
-                    attempt = 0
-                    while not valid:
-                        attempt += 1
-                        gene = random.choice(gene_options_dict[batch_num])
-                        if symmetry != 'octant':
-                            if batch_num == 0:
-                                valid = True
-                            #there must be enough symmetrical locs in the source to fill the symmetric locs in the target.
-                            if multdict[i] <= multdict[gene]:
-                                valid = True
-                            if attempt > 1000:
-                                raise ValueError(f"Failed to reload fuel in shuffling scheme after 1,000 attempts for unassigned location of batch {batch_num}.\n{chromosome}") #!TODO: remove chromosome printout?
-                        else: 
-                            if batch_num == 0:
-                                valid = True
-                            #there must be enough symmetrical locs in the source to fill the symmetric locs in the target.
-                            elif multdict[i] == multdict[gene]:
-                                valid = True
-                            if attempt > 1000:
-                                # try 1000 times and if all fail then forced fresh fuel may occur
-                                if batch_num > 0 and (not any(v >= multdict[i] for v in [multdict[g] for g in gene_options_dict.get(batch_num, [])])):
-                                    fresh_replacement = ( zone_chromosome[0][:-1] +'0',  random.choice(gene_options_dict[0]))
-                                    valid = True
-                                if multdict[i] <= multdict[gene]:
-                                    valid = True
-                                if attempt > 2000:
-                                    raise ValueError(f"Failed to reload fuel in shuffling scheme after 2,000 attempts for unassigned location of batch {batch_num}.\n{chromosome}") #!TODO: remove chromosome printout?
-                    if fresh_replacement:
-                        chromosome[i] = fresh_replacement
-                    else:
-                        chromosome[i] = (chromosome[i][0],gene)
-                        if batch_num != 0:
-                            gene_options_dict[batch_num].remove(gene)
-
-        return chromosome
+                    #there must be enough symmetrical locs in the source to fill the symmetric locs in the target.
+                    elif multdict[i] <= multdict[gene]:
+                        valid = True
+                    if attempt > 1000:
+                        raise ValueError(f"Failed to reload fuel in shuffling scheme after 1,000 attempts for unassigned location of batch {batch_num}.\n{chromosome}") #!TODO: remove chromosome printout?
+                    
+                chromosome[i] = (chromosome[i][0],gene)
+                if batch_num != 0:
+                    gene_options_dict[batch_num].remove(gene)
 
         return chromosome
 
@@ -408,11 +362,8 @@ class Gene_Validity_check():
         if input_obj.calculation_type == 'single_cycle':
             valid_genes_list = Gene_Validity_check.calc_LWR_gene_options(genes_list, genome, parameters, child+chromosome[len(child):], indx)
         elif input_obj.calculation_type == 'eq_cycle':
-            if None in chromosome:
-                child_zone = chromosome
-            else: 
-                child_zone = [loc for loc in child+chromosome[len(child):]]
-            valid_genes_list = Gene_Validity_check.calc_LWR_gene_options(genes_list, genome, parameters, child_zone, indx)            
+            child_zone = [loc[0] for loc in child+chromosome[len(child):]]
+            valid_genes_list = Gene_Validity_check.calc_LWR_gene_options(genes_list, genome, parameters, child_zone, indx)
         elif input_obj.calculation_type == 'lattice_physics':
             valid_genes_list = Gene_Validity_check.calc_lat_gene_options(genes_list, genome, parameters, child+chromosome[len(child):], indx)
         else: 
@@ -522,6 +473,8 @@ class Gene_Validity_check():
 
         elif input_obj.calculation_type == 'lattice_physics':
             valid_chromosome = Gene_Validity_check.check_constraints(genes_list, genome, parameters, child)  
+        elif input_obj.calculation_type == 'continuous_variable':
+            valid_chromosome = Gene_Validity_check.check_constraints(genes_list, genome, parameters, child)
         else: 
             logger.warning('Unconstrained optimization')  
         
@@ -740,9 +693,9 @@ class Solution_Reporting():
         plt.title("Average Fitness per Generation")
         plt.grid()
         #Delete the plot if it already exists
-        if os.path.exists(midas_data.__odir__ + "/average_fitness_plot.png"):
-            os.remove(midas_data.__odir__ + "/average_fitness_plot.png")
-        plt.savefig(midas_data.__odir__ + "/average_fitness_plot.png")
+        if os.path.exists("average_fitness_plot.png"):
+            os.remove("average_fitness_plot.png")
+        plt.savefig("average_fitness_plot.png")
         plt.close()
 
         #Plot max fitness per generation
@@ -753,9 +706,9 @@ class Solution_Reporting():
         plt.title("Maximum Fitness per Generation")
         plt.grid()
         #Delete the plot if it already exists
-        if os.path.exists(midas_data.__odir__ + "/max_fitness_plot.png"):
-            os.remove(midas_data.__odir__ + "/max_fitness_plot.png")
-        plt.savefig(midas_data.__odir__ + "/max_fitness_plot.png")
+        if os.path.exists("max_fitness_plot.png"):
+            os.remove("max_fitness_plot.png")
+        plt.savefig("max_fitness_plot.png")
         plt.close()
 
         #Plot standard deviation of fitness per generation
@@ -766,9 +719,9 @@ class Solution_Reporting():
         plt.title("Standard Deviation of the Fitness per Generation")
         plt.grid()
         #Delete the plot if it already exists
-        if os.path.exists(midas_data.__odir__ + "/std_fitness_plot.png"):
-            os.remove(midas_data.__odir__ + "/std_fitness_plot.png")
-        plt.savefig(midas_data.__odir__ + "/std_fitness_plot.png")
+        if os.path.exists("std_fitness_plot.png"):
+            os.remove("std_fitness_plot.png")
+        plt.savefig("std_fitness_plot.png")
         plt.close()
 
     def plot_optimization_convergence(self):
@@ -788,7 +741,7 @@ class Solution_Reporting():
         plt.title("Optimization Convergence")
         plt.grid()
         #Delete the plot if it already exists
-        if os.path.exists(midas_data.__odir__ + "/convergence_plot.png"):
-            os.remove(midas_data.__odir__ + "/convergence_plot.png")
-        plt.savefig(midas_data.__odir__ + "/convergence_plot.png")  # Save the plot
+        if os.path.exists("convergence_plot.png"):
+            os.remove("convergence_plot.png")
+        plt.savefig("convergence_plot.png")  # Save the plot
         plt.show()
