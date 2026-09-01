@@ -1271,7 +1271,7 @@ class Input_Parser():
         
     ## Fuel Assembly Block ##   
         self.fa_options = yaml_line_reader(self.file_settings, 'assembly_options', None)
-        if not self.fa_options and self.code_interface not in ['ipwr_database', 'ipwr_database_legacy','polaris624','serpent','custom_function','styblinski_tang']:
+        if not self.fa_options and self.code_interface not in ['ipwr_database', 'ipwr_database_legacy','polaris624','serpent2','custom_function','styblinski_tang']:
             raise ValueError("Assembly options must be nested with reflectors, fuels, and/or blankets with their parameters.")
         if self.calculation_type in ['single_cycle','eq_cycle']:
             for param in ['cost_fuelcycle','av_fuelenrichment']:
