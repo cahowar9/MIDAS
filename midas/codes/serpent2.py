@@ -426,6 +426,7 @@ def make_sh_file(directory, input_file, omp_threads):
     text += "#SBATCH -p newq\n"
     text += "#SBATCH -t 1000:00:00\n"
     text += f"#SBATCH -n {omp_threads}\n"
+    text += "#SBATCH -N 1\n"
     text += f"time sss2 -omp {omp_threads} {input_file}\n"
     text+= 'echo "Serpent is finished for this MIDAS run"\n'
 
