@@ -236,6 +236,7 @@ def fill_template(template_path, output_path, template_dict):
 
     # Safe math environment (only what you allow)
     safe_env = {k: getattr(math, k) for k in dir(math) if not k.startswith("__")}
+    safe_env.update({"abs": abs, "min": min, "max": max, "round": round, "int": int, "float": float})
     safe_env.update(template_dict)
 
     # Read template
