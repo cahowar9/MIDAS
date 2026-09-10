@@ -102,6 +102,8 @@ def evaluate(solution, input):
                 f.write(f'set acelib "{input.xs_lib}"\n')
                 f.write(f'set declib "{input.dec_lib}"\n')
                 f.write(f'set nfylib "{input.nfy_lib}"\n')
+                if input.sfy_lib is not None:
+                    f.write(f'set sfylib "{input.sfy_lib}"\n')
                 f.close()
 
 #Start depletion calc first since it takes the longest

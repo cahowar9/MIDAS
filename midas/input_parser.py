@@ -838,7 +838,7 @@ def validate_input(keyword, value):
         if value not in ['full','quarter']:
             raise ValueError("Requested core symmetry (used for printing) not valid.")
     
-    elif keyword in ['xs_library_path','decay_library_path','fission_yield_library_path']:
+    elif keyword in ['xs_library_path','decay_library_path','fission_yield_library_path','spontaneous_fission_yield_library_path']:
         #Create relative filepath
         value_rel = Path('../../') / Path(str(value))
         #Check if relative path exists, then use absolute if not
@@ -1357,9 +1357,19 @@ class Input_Parser():
         self.num_assemblies = yaml_line_reader(infomap, 'number_assemblies', 193)
         self.assembly_pitch = yaml_line_reader(infomap, 'assembly_pitch', 21.50)
         self.map_size = yaml_line_reader(infomap, 'core_symmetry', 'full')
-        self.xs_lib = yaml_line_reader(info, 'xs_library_path', './') #!TODO: interpret this path relative to the MIDAS job base dir, not opt indv base dir.
+        self.xs_lib = yaml_line_reader(info, 'xs_library_path', None) #!TODO: interpret this path relative to the MIDAS job base dir, not opt indv base dir.
         self.dec_lib = yaml_line_reader(info, 'decay_library_path', None)
         self.nfy_lib = yaml_line_reader(info, 'fission_yield_library_path', None)
+        self.sfy_lib = yaml_line_reader(info, 'spontaneous_fission_yield_library_path', None)
+        if self.code_interface == "serpent2":
+            if self.xs_lib is None:
+                raise ValueError("Serpent2 XS library path must be specified in the input file.")
+            elif self.dec_lib is None:
+                raise ValueError("Serpent2 decay library path must be specified in the input file.")
+            elif self.nfy_lib is None:
+                raise ValueError("Serpent2 fission yield library path must be specified in the input file.")
+            elif self.sfy_lib is None:
+                logger.warning("Serpent2 spontaneous fission yield library path is not specified in the input file. MIDAS will assume no spontaneous fission yields are used.")
         self.mass_materials = yaml_line_reader(info, 'mass_materials','all')
         self.excluded_detectors = yaml_line_reader(info, 'excluded_detectors', None)
         self.omp_threads = yaml_line_reader(info, 'omp_threads', 1)
