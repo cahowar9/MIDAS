@@ -1104,12 +1104,12 @@ def validate_input(keyword, value):
         else:
             raise ValueError(f"'mass_materials' takes a list of strings containing material names in serpent file, or 'all' to denote all materials, but got {value} instead.")
 
-    elif keyword == 'power_peaking_detectors':
+    elif keyword == 'excluded_detectors':
         if isinstance(value,list):
             for val in value:
                 val = str(val)
         else:
-            raise ValueError(f"'power_peaking_detectors' only takes a list of detector names as input but got {value} of type {type(value)} instead. Check detector names.")
+            raise ValueError(f"'excluded_detectors' only takes a list of detector names as input but got {value} of type {type(value)} instead. Check detector names.")
     
     return value
 
@@ -1361,7 +1361,7 @@ class Input_Parser():
         self.dec_lib = yaml_line_reader(info, 'decay_library_path', None)
         self.nfy_lib = yaml_line_reader(info, 'fission_yield_library_path', None)
         self.mass_materials = yaml_line_reader(info, 'mass_materials','all')
-        self.power_peaking_detectors = yaml_line_reader(info, 'power_peaking_detectors', None)
+        self.excluded_detectors = yaml_line_reader(info, 'excluded_detectors', None)
         self.omp_threads = yaml_line_reader(info, 'omp_threads', 1)
         dep_default = {'apply':False, 'depletion_steps':None,'depletion_units':None,'omp_threads':None,'particles_per_cycle':None,'active_cycles':None,'inactive_cycles':None}
         self.depletion_settings = yaml_line_reader(info, 'depletion_settings', dep_default)

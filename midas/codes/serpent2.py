@@ -136,9 +136,10 @@ def evaluate(solution, input):
             base_det_path = base_dir / "base_input_det0.m"
             base_det_results = st.read(base_det_path)
             peaking_results = []
-            for det in input.power_peaking_detectors: 
-                if det in base_det_results.detectors:
-                    peaking_results.append(max(base_det_results.detectors[det].tallies))
+            for det_name, detector in base_det_results.detectors.items():
+                if det_name not in input.excluded_detectors:
+                    peaking_results.append(max(detector.tallies))
+
             mean_pow = np.mean(peaking_results)
             peaking_factors = peaking_results / mean_pow
             results_dict["fdeltah"] = np.max(peaking_factors)
