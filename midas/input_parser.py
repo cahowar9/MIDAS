@@ -838,7 +838,7 @@ def validate_input(keyword, value):
         if value not in ['full','quarter']:
             raise ValueError("Requested core symmetry (used for printing) not valid.")
     
-    elif keyword in ['xs_library_path','decay_library_path','fission_yield_library_path','spontaneous_fission_yield_library_path']:
+    elif keyword in ['xs_library_path','decay_library_path','fission_yield_library_path']:
         #Create relative filepath
         value_rel = Path('../../') / Path(str(value))
         #Check if relative path exists, then use absolute if not
@@ -846,6 +846,18 @@ def validate_input(keyword, value):
             value = value_rel
         else:
             value = Path(str(value))
+
+    elif keyword == 'spontaneous_fission_yield_library_path':
+        if value is not None or value.lower() != 'none':
+            #Create relative filepath
+            value_rel = Path('../../') / Path(str(value))
+            #Check if relative path exists, then use absolute if not
+            if value_rel.exists():
+                value = value_rel
+            else:
+                value = Path(str(value))
+        elif value.lower() == 'none':
+            value = None
     
     elif keyword == 'xs_extension':
         value = str(value).split('.')[-1] #this supports both e.g. ".exe" and "exe".
