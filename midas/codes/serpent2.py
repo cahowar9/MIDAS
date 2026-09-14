@@ -73,7 +73,6 @@ def evaluate(solution, input):
         os.mkdir(shutdown_dir)
     if "doppler_temperature_coefficient" in input.objectives:
         fill_template(input.input_template["loc"], doppler_file, template_dict)
-        remove_detector_lines(doppler_file,input.power_peaking_detectors)
         update_temp(doppler_file)
     if "keff_shutdown" in input.objectives:
         fill_template(input.shutdown_template, shutdown_file, template_dict)
@@ -90,8 +89,6 @@ def evaluate(solution, input):
             for step in input.depletion_settings['depletion_steps']:
                 f.write(f"{step}\n")
             f.close()
-    #Remove detector lines outside of base case to improve speed
-        remove_detector_lines(depletion_file,input.power_peaking_detectors)
 
 #Add cross sections and population into serpent files
     for file in [base_file, doppler_file, depletion_file, shutdown_file]:
@@ -324,39 +321,6 @@ def get_masses(filepath):
                     current_material = None  # done with this material
         f.close()
     return masses
-
-def remove_detector_lines(filepath, detector):
-    """
-    Remove lines from a file based on detector type.
-
-    Parameters
-    ----------
-    filepath : str or Path
-        Path to the file to modify.
-    detector : str or list of str
-        If 'ppw', remove lines containing 'set adf' and 'set ppw'.
-        If a list, remove lines containing 'det {detector[i]}' for each element.
-    """
-    filepath = Path(filepath)
-
-    # Read all lines
-    with filepath.open("r") as f:
-        lines = f.readlines()
-        f.close()
-
-    # Determine lines to remove
-    if detector == 'ppw':
-        remove_keywords = ['set adf', 'set ppw']
-    elif isinstance(detector, list):
-        remove_keywords = [f"det {d}" for d in detector]
-
-    # Filter lines
-    new_lines = [line for line in lines if not any(keyword in line for keyword in remove_keywords)]
-
-    # Write back
-    with filepath.open("w") as f:
-        f.writelines(new_lines)
-        f.close()
 
 def get_heavy_metal_percent(filepath):
     """
